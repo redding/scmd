@@ -4,12 +4,12 @@ require File.expand_path('../lib/scmd/version', __FILE__)
 Gem::Specification.new do |gem|
   gem.name        = "scmd"
   gem.version     = Scmd::VERSION
-  gem.description = %q{TODO: Write a gem description}
-  gem.summary     = %q{TODO: Write a gem summary}
+  gem.description = %q{Wrapper to `open4` for running system commands.}
+  gem.summary     = %q{Wrapper to `open4` for running system commands.}
 
-  gem.authors     = ["TODO: authors"]
-  gem.email       = ["TODO: emails"]
-  gem.homepage    = "http://github.com/__/scmd"
+  gem.authors     = ["Kelly Redding and Team Insight"]
+  gem.email       = ["appdev@reelfx.com"]
+  gem.homepage    = "http://github.com/teaminsight/scmd"
 
   gem.files         = `git ls-files`.split("\n")
   gem.test_files    = `git ls-files -- {test,spec,features}/*`.split("\n")
@@ -17,6 +17,5 @@ Gem::Specification.new do |gem|
   gem.require_paths = ["lib"]
 
   gem.add_development_dependency("assert")
-
-  # gem.add_dependency("gem-name", ["~> 0.0"])
+  gem.add_dependency("open4")
 end

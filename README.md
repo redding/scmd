@@ -1,6 +1,6 @@
 # Scmd
 
-TODO: Write a gem description
+Wrapper to `open4` for running system commands.
 
 ## Installation
 
@@ -18,7 +18,72 @@ Or install it yourself as:
 
 ## Usage
 
-TODO: Write usage instructions here
+Create a command object:
+
+```ruby
+cmd = Scmd.new("echo hi")
+
+cmd.to_s    #=> "echo hi"
+cmd.inspect #=>
+
+cmd.pid      #=> nil
+cmd.exitcode #=> nil
+cmd.stdout   #=> ''
+cmd.stderr   #=> ''
+```
+
+Run it:
+
+```ruby
+cmd.run
+```
+
+Results:
+
+```ruby
+# written to the cmd instance
+cmd.pid      #=> 12345
+cmd.exitcode #=> 0
+cmd.stdout   #=> 'hi'
+cmd.stderr   #=> ''
+
+# the cmd instance is returned by `run` for chaining as well
+cmd.run.stdout #=> 'hi'
+```
+
+Some helpers:
+
+```ruby
+puts cmd.stderr if !cmd.success?
+```
+
+Raise an exception if not successful with `run!`:
+
+```ruby
+Scmd.new("cd /path/that/does/not/exist").run! #=> Scmd::CommandFailure
+```
+
+Log cmd execution:
+
+```ruby
+Scmd.new("echo hi", :logger => a_logger)
+```
+
+Pretend to run the command (for testing or other non-production uses):
+
+```ruby
+# call the `pretend` method
+cmd = Scmd.new("echo hi", :logger => a_logger).pretend
+
+# or build with the `:pretend` option and run
+cmd = Scmd.new("echo hi", :logger => a_logger, :pretend => true).run
+
+# just logs what it would have done and sets `exitcode` to zero (success)
+cmd.pid      #=> nil
+cmd.exitcode #=> 0
+cmd.stdout   #=> ''
+cmd.stderr   #=> ''
+```
 
 ## Contributing
 
