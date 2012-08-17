@@ -24,7 +24,7 @@ Create a command object:
 cmd = Scmd.new("echo hi")
 
 cmd.to_s    #=> "echo hi"
-cmd.inspect #=>
+cmd.inspect #=> #<Scmd::Command:0x83220514 @cmd_str="echo hi" @exitcode=nil>
 
 cmd.pid      #=> nil
 cmd.exitcode #=> nil
@@ -60,29 +60,7 @@ puts cmd.stderr if !cmd.success?
 Raise an exception if not successful with `run!`:
 
 ```ruby
-Scmd.new("cd /path/that/does/not/exist").run! #=> Scmd::CommandFailure
-```
-
-Log cmd execution:
-
-```ruby
-Scmd.new("echo hi", :logger => a_logger)
-```
-
-Pretend to run the command (for testing or other non-production uses):
-
-```ruby
-# call the `pretend` method
-cmd = Scmd.new("echo hi", :logger => a_logger).pretend
-
-# or build with the `:pretend` option and run
-cmd = Scmd.new("echo hi", :logger => a_logger, :pretend => true).run
-
-# just logs what it would have done and sets `exitcode` to zero (success)
-cmd.pid      #=> nil
-cmd.exitcode #=> 0
-cmd.stdout   #=> ''
-cmd.stderr   #=> ''
+Scmd.new("cd /path/that/does/not/exist").run! #=> Scmd::Command::Failure
 ```
 
 ## Contributing
