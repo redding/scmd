@@ -1,6 +1,6 @@
 # Scmd
 
-TODO: Write a gem description
+Wrapper to `open4` for running system commands.
 
 ## Installation
 
@@ -18,7 +18,50 @@ Or install it yourself as:
 
 ## Usage
 
-TODO: Write usage instructions here
+Create a command object:
+
+```ruby
+cmd = Scmd.new("echo hi")
+
+cmd.to_s    #=> "echo hi"
+cmd.inspect #=> #<Scmd::Command:0x83220514 @cmd_str="echo hi" @exitcode=nil>
+
+cmd.pid      #=> nil
+cmd.exitcode #=> nil
+cmd.stdout   #=> ''
+cmd.stderr   #=> ''
+```
+
+Run it:
+
+```ruby
+cmd.run
+```
+
+Results:
+
+```ruby
+# written to the cmd instance
+cmd.pid      #=> 12345
+cmd.exitcode #=> 0
+cmd.stdout   #=> 'hi'
+cmd.stderr   #=> ''
+
+# the cmd instance is returned by `run` for chaining as well
+cmd.run.stdout #=> 'hi'
+```
+
+Some helpers:
+
+```ruby
+puts cmd.stderr if !cmd.success?
+```
+
+Raise an exception if not successful with `run!`:
+
+```ruby
+Scmd.new("cd /path/that/does/not/exist").run! #=> Scmd::Command::Failure
+```
 
 ## Contributing
 
