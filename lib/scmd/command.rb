@@ -33,10 +33,8 @@ module Scmd
     end
 
     def run
-      begin
-        run!
-      rescue Failure => err
-      end
+      run! rescue Failure
+      self
     end
 
     def run!
@@ -53,8 +51,6 @@ module Scmd
       end
 
       raise Failure, @stderr if !success?
-
-      # return self for result inspection and chaining
       self
     end
 

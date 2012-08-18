@@ -24,11 +24,6 @@ class CommandTests < Assert::Context
     assert_equal '', subject.stderr
   end
 
-  should "return itself on `run`, `run!`" do
-    assert_equal subject, subject.run
-    assert_equal subject, subject.run!
-  end
-
   should "run the command and set appropriate result data" do
     @success_cmd.run
 
@@ -51,6 +46,12 @@ class CommandTests < Assert::Context
     assert_raises Scmd::Command::Failure do
       @failure_cmd.run!
     end
+  end
+
+  should "return itself on `run`, `run!`" do
+    assert_equal @success_cmd, @success_cmd.run
+    assert_equal @success_cmd, @success_cmd.run!
+    assert_equal @failure_cmd, @failure_cmd.run
   end
 
 end
