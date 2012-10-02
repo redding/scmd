@@ -51,7 +51,28 @@ cmd.stderr   #=> ''
 cmd.run.stdout #=> 'hi'
 ```
 
-Some helpers:
+### Run with input on stdin
+
+A single input line
+
+```ruby
+input = "echo hi"
+cmd = Scmd.new("sh").run(input)
+cmd.stdout #=> 'hi'
+```
+
+Multiple input lines:
+
+```ruby
+input = ["echo hi", "echo err 1>&2"]
+cmd = Scmd.new("sh").run(input)
+cmd.stdout #=> 'hi'
+cmd.stderr #=> 'err'
+```
+
+### Some helpers
+
+Ask if cmd was successful:
 
 ```ruby
 puts cmd.stderr if !cmd.success?
