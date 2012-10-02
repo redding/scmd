@@ -32,14 +32,18 @@ module Scmd
       "#<#{self.class}:0x#{self.object_id.to_s(16)} @cmd_str=#{self.cmd_str.inspect} @exitcode=#{@exitcode.inspect}>"
     end
 
-    def run
-      run! rescue Failure
+    def run(input=nil)
+      run!(input) rescue Failure
       self
     end
 
-    def run!
+    def run!(input=nil)
       begin
         status = Open4::popen4(@cmd_str) do |pid, stdin, stdout, stderr|
+          if !input.nil?
+            [*input].each{|line| stdin.puts line.to_s}
+            stdin.close
+          end
           @pid =  pid.to_i
           @stdout += stdout.read.strip
           @stderr += stderr.read.strip
