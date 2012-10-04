@@ -7,9 +7,9 @@ Gem::Specification.new do |gem|
   gem.description = %q{Wrapper to `open4` for running system commands.}
   gem.summary     = %q{Wrapper to `open4` for running system commands.}
 
-  gem.authors     = ["Kelly Redding and Team Insight"]
-  gem.email       = ["appdev@reelfx.com"]
-  gem.homepage    = "http://github.com/teaminsight/scmd"
+  gem.authors     = ["Kelly Redding"]
+  gem.email       = ["kelly@kellyredding.com"]
+  gem.homepage    = "http://github.com/redding/scmd"
 
   gem.files         = `git ls-files`.split("\n")
   gem.test_files    = `git ls-files -- {test,spec,features}/*`.split("\n")
