@@ -24,12 +24,12 @@ Create a command object:
 cmd = Scmd.new("echo hi")
 
 cmd.to_s    #=> "echo hi"
-cmd.inspect #=> #<Scmd::Command:0x83220514 @cmd_str="echo hi" @exitcode=nil>
+cmd.inspect #=> #<Scmd::Command:0x83220514 @cmd_str="echo hi" @exitstatus=nil>
 
-cmd.pid      #=> nil
-cmd.exitcode #=> nil
-cmd.stdout   #=> ''
-cmd.stderr   #=> ''
+cmd.pid        #=> nil
+cmd.exitstatus #=> nil
+cmd.stdout     #=> ''
+cmd.stderr     #=> ''
 ```
 
 Run it:
@@ -42,10 +42,10 @@ Results:
 
 ```ruby
 # written to the cmd instance
-cmd.pid      #=> 12345
-cmd.exitcode #=> 0
-cmd.stdout   #=> 'hi'
-cmd.stderr   #=> ''
+cmd.pid        #=> 12345
+cmd.exitstatus #=> 0
+cmd.stdout     #=> 'hi'
+cmd.stderr     #=> ''
 
 # the cmd instance is returned by `run` for chaining as well
 cmd.run.stdout #=> 'hi'

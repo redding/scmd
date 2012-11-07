@@ -16,7 +16,7 @@ module Scmd
     end
 
     attr_reader :cmd_str
-    attr_reader :pid, :exitcode, :stdout, :stderr
+    attr_reader :pid, :exitstatus, :stdout, :stderr
 
     def initialize(cmd_str)
       @cmd_str = cmd_str
@@ -24,12 +24,12 @@ module Scmd
     end
 
     def reset_results
-      @pid = @exitcode = nil
+      @pid = @exitstatus = nil
       @stdout = @stderr = ''
     end
 
     def success?
-      @exitcode == 0
+      @exitstatus == 0
     end
 
     def to_s
@@ -40,7 +40,7 @@ module Scmd
       reference = '0x0%x' % (self.object_id << 1)
       "#<#{self.class}:#{reference}"\
       " @cmd_str=#{self.cmd_str.inspect}"\
-      " @exitcode=#{@exitcode.inspect}>"
+      " @exitstatus=#{@exitstatus.inspect}>"
     end
 
     def run(input=nil)
@@ -62,9 +62,9 @@ module Scmd
         # `$?` is a thread-safe predefined variable that returns the exit status
         # of the last child process to terminate:
         # http://phrogz.net/ProgrammingRuby/language.html#predefinedvariables
-        @exitcode = $?.to_i
+        @exitstatus = $?.exitstatus
       rescue Errno::ENOENT => err
-        @exitcode = -1
+        @exitstatus = -1
         @stderr   = err.message
       end
 
