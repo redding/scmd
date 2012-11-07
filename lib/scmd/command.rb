@@ -4,9 +4,15 @@
 # create a more custom command wrapper.
 
 module Scmd
-  class Command
 
-    class Failure < RuntimeError; end
+  class RunError < ::RuntimeError
+    def initialize(stderr, called_from)
+      super(stderr)
+      set_backtrace(called_from)
+    end
+  end
+
+  class Command
 
     ENGINE = if !(PLATFORM =~ /java/)
       require 'open4'
@@ -44,11 +50,13 @@ module Scmd
     end
 
     def run(input=nil)
-      run!(input) rescue Failure
+      run!(input) rescue RunError
       self
     end
 
     def run!(input=nil)
+      called_from = caller
+
       begin
         ENGINE::popen4(@cmd_str) do |pid, stdin, stdout, stderr|
           if !input.nil?
@@ -68,7 +76,7 @@ module Scmd
         @stderr   = err.message
       end
 
-      raise Failure, @stderr if !success?
+      raise RunError.new(@stderr, called_from) if !success?
       self
     end
 

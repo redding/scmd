@@ -44,10 +44,16 @@ module Scmd
       assert_not_equal '', @failure_cmd.stderr
     end
 
-    should "raise an exception on `run!` and a non-zero exitstatus" do
-      assert_raises Scmd::Command::Failure do
+    should "raise an exception with proper backtrace on `run!`" do
+      err = begin;
         @failure_cmd.run!
+      rescue Exception => err
+        err
       end
+
+      assert_kind_of Scmd::RunError, err
+      assert_includes 'No such file or directory', err.message
+      assert_includes 'test/command_tests.rb:', err.backtrace.first
     end
 
     should "return itself on `run`, `run!`" do
