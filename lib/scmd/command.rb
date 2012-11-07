@@ -2,14 +2,6 @@
 # with with a string specifying the command to execute.  You can then run the
 # command and inspect its results.  It can be used as is, or inherited from to
 # create a more custom command wrapper.
-#
-# Notes:
-# * Uses `open4`. Open4 is more reliable for actually getting the subprocesses
-#   exit code (compared to `open3`).
-# * The inspect method is overwritten to only display the name of the class and
-#   the command string. This is to help reduce ridiculous inspect strings due to
-#   result data that is stored in instance variables.
-# * See the README.md for a walkthrough of the API.
 
 module Scmd
   class Command
@@ -31,10 +23,24 @@ module Scmd
       reset_results
     end
 
-    def success?; @exitcode == 0; end
-    def to_s; @cmd_str.to_s; end
+    def reset_results
+      @pid = @exitcode = nil
+      @stdout = @stderr = ''
+    end
+
+    def success?
+      @exitcode == 0
+    end
+
+    def to_s
+      @cmd_str.to_s
+    end
+
     def inspect
-      "#<#{self.class}:0x#{self.object_id.to_s(16)} @cmd_str=#{self.cmd_str.inspect} @exitcode=#{@exitcode.inspect}>"
+      reference = '0x0%x' % (self.object_id << 1)
+      "#<#{self.class}:#{reference}"\
+      " @cmd_str=#{self.cmd_str.inspect}"\
+      " @exitcode=#{@exitcode.inspect}>"
     end
 
     def run(input=nil)
@@ -64,11 +70,6 @@ module Scmd
 
       raise Failure, @stderr if !success?
       self
-    end
-
-    def reset_results
-      @pid = @exitcode = nil
-      @stdout = @stderr = ''
     end
 
   end
