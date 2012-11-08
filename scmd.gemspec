@@ -4,11 +4,11 @@ require File.expand_path('../lib/scmd/version', __FILE__)
 Gem::Specification.new do |gem|
   gem.name        = "scmd"
   gem.version     = Scmd::VERSION
-  gem.description = %q{Wrapper to `open4` for running system commands.}
-  gem.summary     = %q{Wrapper to `open4` for running system commands.}
+  gem.description = %q{Build and run system commands.}
+  gem.summary     = %q{Build and run system commands.}
 
-  gem.authors     = ["Kelly Redding"]
-  gem.email       = ["kelly@kellyredding.com"]
+  gem.authors     = ["Kelly Redding", "Collin Redding"]
+  gem.email       = ["kelly@kellyredding.com", "collin.redding@me.com"]
   gem.homepage    = "http://github.com/redding/scmd"
 
   gem.files         = `git ls-files`.split("\n")
