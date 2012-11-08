@@ -11,7 +11,7 @@ module Scmd
     end
     subject { @success_cmd }
 
-    should have_readers :cmd_str, :pid, :exitcode, :stdout, :stderr
+    should have_readers :cmd_str, :pid, :exitstatus, :stdout, :stderr
     should have_instance_methods :run, :run!
 
     should "know and return its cmd string" do
@@ -21,7 +21,7 @@ module Scmd
 
     should "default its result values" do
       assert_nil subject.pid
-      assert_nil subject.exitcode
+      assert_nil subject.exitstatus
       assert_equal '', subject.stdout
       assert_equal '', subject.stderr
     end
@@ -30,7 +30,7 @@ module Scmd
       @success_cmd.run
 
       assert_not_nil @success_cmd.pid
-      assert_equal 0, @success_cmd.exitcode
+      assert_equal 0, @success_cmd.exitstatus
       assert @success_cmd.success?
       assert_equal 'hi', @success_cmd.stdout
       assert_equal '', @success_cmd.stderr
@@ -38,16 +38,22 @@ module Scmd
       @failure_cmd.run
 
       assert_not_nil @failure_cmd.pid
-      assert_not_equal 0, @failure_cmd.exitcode
+      assert_not_equal 0, @failure_cmd.exitstatus
       assert_not @failure_cmd.success?
       assert_equal '', @failure_cmd.stdout
       assert_not_equal '', @failure_cmd.stderr
     end
 
-    should "raise an exception on `run!` and a non-zero exitcode" do
-      assert_raises Scmd::Command::Failure do
+    should "raise an exception with proper backtrace on `run!`" do
+      err = begin;
         @failure_cmd.run!
+      rescue Exception => err
+        err
       end
+
+      assert_kind_of Scmd::RunError, err
+      assert_includes 'No such file or directory', err.message
+      assert_includes 'test/command_tests.rb:', err.backtrace.first
     end
 
     should "return itself on `run`, `run!`" do
