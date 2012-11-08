@@ -3,6 +3,8 @@
 # command and inspect its results.  It can be used as is, or inherited from to
 # create a more custom command wrapper.
 
+require 'posix-spawn'
+
 module Scmd
 
   class RunError < ::RuntimeError
@@ -13,13 +15,6 @@ module Scmd
   end
 
   class Command
-
-    ENGINE = if !(PLATFORM =~ /java/)
-      require 'open4'
-      Open4
-    else
-      IO
-    end
 
     attr_reader :cmd_str
     attr_reader :pid, :exitstatus, :stdout, :stderr
@@ -58,25 +53,29 @@ module Scmd
       called_from = caller
 
       begin
-        ENGINE::popen4(@cmd_str) do |pid, stdin, stdout, stderr|
-          if !input.nil?
-            [*input].each{|line| stdin.puts line.to_s}
-            stdin.close
-          end
-          @pid =  pid.to_i
-          @stdout += stdout.read.strip
-          @stderr += stderr.read.strip
+        pid, stdin, stdout, stderr = POSIX::Spawn::popen4(@cmd_str)
+        if !input.nil?
+          [*input].each{|line| stdin.puts line.to_s}
+          stdin.close
         end
+        @pid     = pid.to_i
+        @stdout += stdout.read.strip
+        @stderr += stderr.read.strip
+      rescue Errno::ENOENT => err
+        @exitstatus = -1
+        @stderr     = err.message
+      ensure
+        [stdin, stdout, stderr].each{|io| io.close if !io.closed?}
+        ::Process::waitpid(pid)
+
         # `$?` is a thread-safe predefined variable that returns the exit status
         # of the last child process to terminate:
         # http://phrogz.net/ProgrammingRuby/language.html#predefinedvariables
-        @exitstatus = $?.exitstatus
-      rescue Errno::ENOENT => err
-        @exitstatus = -1
-        @stderr   = err.message
+        @exitstatus ||= $?.exitstatus
+
+        raise RunError.new(@stderr, called_from) if !success?
       end
 
-      raise RunError.new(@stderr, called_from) if !success?
       self
     end
 
