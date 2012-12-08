@@ -1,20 +1,6 @@
 # Scmd
 
-Wrapper to `open4` for running system commands.
-
-## Installation
-
-Add this line to your application's Gemfile:
-
-    gem 'scmd'
-
-And then execute:
-
-    $ bundle
-
-Or install it yourself as:
-
-    $ gem install scmd
+Build and run system commands.  Scmd uses `posix-spawn` to fork child processes to run the commands.
 
 ## Usage
 
@@ -83,6 +69,20 @@ Raise an exception if not successful with `run!`:
 ```ruby
 Scmd.new("cd /path/that/does/not/exist").run! #=> Scmd::Command::Failure
 ```
+
+## Installation
+
+Add this line to your application's Gemfile:
+
+    gem 'scmd'
+
+And then execute:
+
+    $ bundle
+
+Or install it yourself as:
+
+    $ gem install scmd
 
 ## Contributing
 
