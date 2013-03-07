@@ -1,9 +1,9 @@
+require 'posix-spawn'
+
 # Scmd::Command is a base wrapper for handling system commands. Initialize it
 # with with a string specifying the command to execute.  You can then run the
 # command and inspect its results.  It can be used as is, or inherited from to
 # create a more custom command wrapper.
-
-require 'posix-spawn'
 
 module Scmd
 

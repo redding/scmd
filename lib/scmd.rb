@@ -1,3 +1,4 @@
+require 'scmd/version'
 require 'scmd/command'
 
 module Scmd
