@@ -53,7 +53,7 @@ module Scmd
 
       assert_kind_of Scmd::RunError, err
       assert_includes 'No such file or directory', err.message
-      assert_includes 'test/command_tests.rb:', err.backtrace.first
+      assert_includes 'test/unit/command_tests.rb:', err.backtrace.first
     end
 
     should "return itself on `run`, `run!`" do
