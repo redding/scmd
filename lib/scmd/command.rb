@@ -54,25 +54,18 @@ module Scmd
 
       begin
         pid, stdin, stdout, stderr = POSIX::Spawn::popen4(@cmd_str)
+        @pid = pid.to_i
         if !input.nil?
           [*input].each{|line| stdin.puts line.to_s}
           stdin.close
         end
-        @pid     = pid.to_i
-        @stdout += stdout.read.strip
-        @stderr += stderr.read.strip
-      rescue Errno::ENOENT => err
-        @exitstatus = -1
-        @stderr     = err.message
       ensure
+        pidnum, pidstatus = ::Process::waitpid2(pid)
+        @stdout      += stdout.read.strip
+        @stderr      += stderr.read.strip
+        @exitstatus ||= pidstatus.exitstatus
+
         [stdin, stdout, stderr].each{|io| io.close if !io.closed?}
-        ::Process::waitpid(pid)
-
-        # `$?` is a thread-safe predefined variable that returns the exit status
-        # of the last child process to terminate:
-        # http://phrogz.net/ProgrammingRuby/language.html#predefinedvariables
-        @exitstatus ||= $?.exitstatus
-
         raise RunError.new(@stderr, called_from) if !success?
       end
 
