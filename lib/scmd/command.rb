@@ -15,6 +15,7 @@ module Scmd
   end
 
   class Command
+    RunData = Class.new(Struct.new(:pid, :stdin, :stdout, :stderr))
 
     attr_reader :cmd_str
     attr_reader :pid, :exitstatus, :stdout, :stderr
@@ -25,8 +26,39 @@ module Scmd
     end
 
     def reset_results
-      @pid = @exitstatus = nil
+      @pid = @exitstatus = @run_data = nil
       @stdout = @stderr = ''
+    end
+
+    def run(input=nil)
+      run!(input) rescue RunError
+      self
+    end
+
+    def run!(input=nil)
+      called_from = caller
+
+      begin
+        @run_data = RunData.new(*POSIX::Spawn::popen4(@cmd_str))
+        @pid = @run_data.pid.to_i
+        if !input.nil?
+          [*input].each{|line| @run_data.stdin.puts line.to_s}
+          @run_data.stdin.close
+        end
+      ensure
+        pidnum, pidstatus = ::Process::waitpid2(@run_data.pid)
+        @stdout      += @run_data.stdout.read.strip
+        @stderr      += @run_data.stderr.read.strip
+        @exitstatus ||= pidstatus.exitstatus
+
+        [@run_data.stdin, @run_data.stdout, @run_data.stderr].each do |io|
+          io.close if !io.closed?
+        end
+        @run_data = nil
+        raise RunError.new(@stderr, called_from) if !success?
+      end
+
+      self
     end
 
     def success?
@@ -42,34 +74,6 @@ module Scmd
       "#<#{self.class}:#{reference}"\
       " @cmd_str=#{self.cmd_str.inspect}"\
       " @exitstatus=#{@exitstatus.inspect}>"
-    end
-
-    def run(input=nil)
-      run!(input) rescue RunError
-      self
-    end
-
-    def run!(input=nil)
-      called_from = caller
-
-      begin
-        pid, stdin, stdout, stderr = POSIX::Spawn::popen4(@cmd_str)
-        @pid = pid.to_i
-        if !input.nil?
-          [*input].each{|line| stdin.puts line.to_s}
-          stdin.close
-        end
-      ensure
-        pidnum, pidstatus = ::Process::waitpid2(pid)
-        @stdout      += stdout.read.strip
-        @stderr      += stderr.read.strip
-        @exitstatus ||= pidstatus.exitstatus
-
-        [stdin, stdout, stderr].each{|io| io.close if !io.closed?}
-        raise RunError.new(@stderr, called_from) if !success?
-      end
-
-      self
     end
 
   end
