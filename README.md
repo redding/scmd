@@ -24,6 +24,30 @@ Run it:
 cmd.run
 ```
 
+**OR**, async run it:
+
+```ruby
+cmd.start
+cmd.running? # => true
+cmd.pid      #=> 12345
+
+# do other stuff...
+cmd.wait # indefinitely until cmd exits
+```
+
+**OR**, async run it with a timeout:
+
+```ruby
+cmd.start
+
+begin
+  cmd.wait(10)
+rescue Scmd::Timeout => err
+  cmd.stop # attempt to stop the cmd nicely, kill if doesn't stop in time
+  cmd.kill # just kill the cmd now
+end
+```
+
 Results:
 
 ```ruby
