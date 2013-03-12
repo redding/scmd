@@ -13,6 +13,9 @@ module Scmd
 
     should have_readers :cmd_str, :pid, :exitstatus, :stdout, :stderr
     should have_instance_methods :run, :run!
+    should have_instance_methods :start, :wait, :stop, :kill
+    should have_instance_methods :running?, :success?
+
 
     should "know and return its cmd string" do
       assert_equal "echo hi", subject.cmd_str
@@ -62,6 +65,42 @@ module Scmd
       assert_equal @failure_cmd, @failure_cmd.run
     end
 
+    should "start and be running until `wait` is called and the cmd exits" do
+      cmd = Command.new("sleep .1")
+      assert_not cmd.running?
+
+      cmd.start
+      assert cmd.running?
+      assert_not_nil cmd.pid
+
+      cmd.wait
+      assert_not cmd.running?
+    end
+
+    should "do nothing and return when told to wait but not running" do
+      assert_not subject.running?
+      assert_nil subject.pid
+
+      subject.wait
+      assert_nil subject.pid
+    end
+
+    should "do nothing and return when told to stop but not running" do
+      assert_not subject.running?
+      assert_nil subject.pid
+
+      subject.stop
+      assert_nil subject.pid
+    end
+
+    should "do nothing and return when told to kill but not running" do
+      assert_not subject.running?
+      assert_nil subject.pid
+
+      subject.kill
+      assert_nil subject.pid
+    end
+
   end
 
   class InputTests < CommandTests
@@ -84,6 +123,46 @@ module Scmd
       assert @cmd.success?
       assert_equal 'hi', @cmd.stdout
       assert_equal 'err', @cmd.stderr
+    end
+
+  end
+
+  class LongRunningTests < CommandTests
+    desc "that is long running"
+    setup do
+      @long_cmd = Command.new("sleep .3 && echo hi")
+    end
+
+    should "not timeout if wait timeout is longer than cmd time" do
+      assert_nothing_raised do
+        @long_cmd.start
+        @long_cmd.wait(1)
+      end
+      assert @long_cmd.success?
+      assert_equal 'hi', @long_cmd.stdout
+    end
+
+    should "timeout if wait timeout is shorter than cmd time" do
+      assert_raises(TimeoutError) do
+        @long_cmd.start
+        @long_cmd.wait(0.1)
+      end
+      assert_not @long_cmd.success?
+      assert_empty @long_cmd.stdout
+    end
+
+    should "be stoppable" do
+      @long_cmd.start
+      @long_cmd.stop
+
+      assert_not @long_cmd.running?
+    end
+
+    should "be killable" do
+      @long_cmd.start
+      @long_cmd.kill
+
+      assert_not @long_cmd.running?
     end
 
   end
