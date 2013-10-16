@@ -34,7 +34,7 @@ class Scmd::Command
       assert_not_nil @success_cmd.pid
       assert_equal 0, @success_cmd.exitstatus
       assert @success_cmd.success?
-      assert_equal 'hi', @success_cmd.stdout
+      assert_equal "hi\n", @success_cmd.stdout
       assert_equal '', @success_cmd.stderr
 
       @failure_cmd.run
@@ -113,15 +113,15 @@ class Scmd::Command
       subject.run "echo hi"
 
       assert @cmd.success?
-      assert_equal 'hi', @cmd.stdout
+      assert_equal "hi\n", @cmd.stdout
     end
 
     should "run the command given multiple lines of input" do
       subject.run ["echo hi", "echo err 1>&2"]
 
       assert @cmd.success?
-      assert_equal 'hi', @cmd.stdout
-      assert_equal 'err', @cmd.stderr
+      assert_equal "hi\n",  @cmd.stdout
+      assert_equal "err\n", @cmd.stderr
     end
 
   end
@@ -138,7 +138,7 @@ class Scmd::Command
         @long_cmd.wait(1)
       end
       assert @long_cmd.success?
-      assert_equal 'hi', @long_cmd.stdout
+      assert_equal "hi\n", @long_cmd.stdout
     end
 
     should "timeout if wait timeout is shorter than cmd time" do
@@ -162,6 +162,30 @@ class Scmd::Command
       @long_cmd.kill
 
       assert_not @long_cmd.running?
+    end
+
+  end
+
+  class BufferDeadlockTests < UnitTests
+    desc "when capturing data from an output buffer"
+    setup do
+      @small_path = File.join(ROOT_PATH, 'test/support/smaller-than-64k.txt')
+      @small_data = File.read(@small_path)
+      @small_cmd  = Scmd::Command.new("cat #{@small_path}")
+
+      @big_path = File.join(ROOT_PATH, 'test/support/bigger-than-64k.txt')
+      @big_data = File.read(@big_path)
+      @big_cmd  = Scmd::Command.new("cat #{@big_path}")
+    end
+
+    should "not deadlock, just stream the data from the buffer" do
+      @small_cmd.start
+      assert_nothing_raised{ @small_cmd.wait(1) }
+      assert_equal @small_data, @small_cmd.stdout
+
+      @big_cmd.start
+      assert_nothing_raised{ @big_cmd.wait(1) }
+      assert_equal @big_data, @big_cmd.stdout
     end
 
   end

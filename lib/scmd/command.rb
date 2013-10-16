@@ -1,3 +1,4 @@
+require 'thread'
 require 'posix-spawn'
 require 'scmd'
 
@@ -9,9 +10,9 @@ require 'scmd'
 module Scmd
 
   class Command
-    WAIT_INTERVAL = 0.1 # seconds
-    STOP_TIMEOUT  = 3   # seconds
-    RunData = Class.new(Struct.new(:pid, :stdin, :stdout, :stderr))
+    READ_SIZE = 10240 # bytes
+    WAIT_INTERVAL = 0.01 # seconds
+    STOP_TIMEOUT  = 3 # seconds
 
     attr_reader :cmd_str
     attr_reader :pid, :exitstatus, :stdout, :stderr
@@ -21,12 +22,12 @@ module Scmd
       setup
     end
 
-    def run(input=nil)
+    def run(input = nil)
       run!(input) rescue RunError
       self
     end
 
-    def run!(input=nil)
+    def run!(input = nil)
       called_from = caller
 
       begin
@@ -39,28 +40,38 @@ module Scmd
       self
     end
 
-    def start(input=nil)
+    def start(input = nil)
       setup
-      @run_data = RunData.new(*POSIX::Spawn::popen4(@cmd_str))
-      @pid = @run_data.pid.to_i
-      if !input.nil?
-        [*input].each{|line| @run_data.stdin.puts line.to_s}
-        @run_data.stdin.close
+      @child_process = ChildProcess.new(@cmd_str)
+      @pid = @child_process.pid.to_i
+
+      @child_process.write(input)
+      @read_output_thread = Thread.new do
+        begin
+          read_output while @child_process.running?
+        rescue EOFError => err
+        end
       end
     end
 
-    def wait(timeout=nil)
+    def wait(timeout = nil)
       return if !running?
 
-      pidnum, pidstatus = wait_for_exit(timeout)
-      @stdout     += @run_data.stdout.read.strip
-      @stderr     += @run_data.stderr.read.strip
-      @exitstatus  = pidstatus.exitstatus || pidstatus.termsig
+      wait_for_exit(timeout)
+      if @child_process.running?
+        kill
+        raise(TimeoutError, "`#{@cmd_str}` timed out (#{timeout}s).")
+      end
+      @read_output_thread.join
+
+      @stdout += @child_process.flush_stdout
+      @stderr += @child_process.flush_stderr
+      @exitstatus = @child_process.exitstatus
 
       teardown
     end
 
-    def stop(timeout=nil)
+    def stop(timeout = nil)
       return if !running?
 
       send_term
@@ -79,7 +90,7 @@ module Scmd
     end
 
     def running?
-      !@run_data.nil?
+      !@child_process.nil?
     end
 
     def success?
@@ -99,32 +110,30 @@ module Scmd
 
     private
 
+    def read_output
+      @child_process.read(READ_SIZE){ |out, err| @stdout += out; @stderr += err }
+    end
+
     def wait_for_exit(timeout)
       if timeout.nil?
-        ::Process::waitpid2(@run_data.pid)
+        @child_process.wait_for_exit
       else
-        timeout_time = Time.now + timeout
-        pid, status = nil, nil
-        while pid.nil? &&  Time.now < timeout_time
+        timeout_at = Time.now + timeout
+        while @child_process.running? && (Time.now < timeout_at)
           sleep WAIT_INTERVAL
-          pid, status = ::Process.waitpid2(@run_data.pid, ::Process::WNOHANG)
-          pid = nil if pid == 0 # may happen on jruby
+          @child_process.wait_for_exit(::Process::WNOHANG)
         end
-        raise(TimeoutError, "`#{@cmd_str}` timed out (#{timeout}s).") if pid.nil?
-        [pid, status]
       end
     end
 
     def setup
-      @pid = @exitstatus = @run_data = nil
-      @stdout = @stderr = ''
+      @stdout, @stderr, @pid, @exitstatus = '', '', nil, nil
+      @child_process, @read_output_thread = nil, nil
     end
 
     def teardown
-      [@run_data.stdin, @run_data.stdout, @run_data.stderr].each do |io|
-        io.close if !io.closed?
-      end
-      @run_data = nil
+      @child_process.teardown
+      @child_process, @read_output_thread = nil, nil
       true
     end
 
@@ -138,7 +147,63 @@ module Scmd
 
     def send_signal(sig)
       return if !running?
-      ::Process.kill sig, @run_data.pid
+      ::Process.kill sig, @child_process.pid
+    end
+
+    class ChildProcess
+
+      attr_reader :pid, :stdin, :stdout, :stderr
+
+      def initialize(cmd_str)
+        @pid, @stdin, @stdout, @stderr = *::POSIX::Spawn::popen4(cmd_str)
+        @wait_pid, @wait_status = nil, nil
+      end
+
+      def running?
+        @wait_pid.nil?
+      end
+
+      def exitstatus
+        return nil if @wait_status.nil?
+        @wait_status.exitstatus || @wait_status.termsig
+      end
+
+      def write(input)
+        if !input.nil?
+          [*input].each{ |line| @stdin.puts line.to_s }
+          @stdin.close
+        end
+      end
+
+      def read(size)
+        ios, _, _ = IO.select([ @stdout, @stderr ])
+        if block_given?
+          yield read_if_ready(ios, @stdout, size), read_if_ready(ios, @stderr, size)
+        end
+      end
+
+      def flush_stdout; @stdout.read; end
+      def flush_stderr; @stderr.read; end
+
+      def wait_for_exit(*args)
+        @wait_pid, @wait_status = ::Process.waitpid2(@pid, *args)
+        @wait_pid = nil if @wait_pid == 0 # may happen on jruby
+      end
+
+      def teardown
+        [@stdin, @stdout, @stderr].each{ |io| io.close if !io.closed? }
+      end
+
+      private
+
+      def read_if_ready(ready_ios, io, size)
+        ready_ios.include?(io) ? read_by_size(io, size) : ''
+      end
+
+      def read_by_size(io, size)
+        io.read_nonblock(size)
+      end
+
     end
 
   end
