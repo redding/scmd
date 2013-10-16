@@ -1,4 +1,5 @@
 require 'posix-spawn'
+require 'scmd'
 
 # Scmd::Command is a base wrapper for handling system commands. Initialize it
 # with with a string specifying the command to execute.  You can then run the
@@ -6,15 +7,6 @@ require 'posix-spawn'
 # create a more custom command wrapper.
 
 module Scmd
-
-  class RunError < ::RuntimeError
-    def initialize(stderr, called_from)
-      super(stderr)
-      set_backtrace(called_from)
-    end
-  end
-
-  TimeoutError = Class.new(::RuntimeError)
 
   class Command
     WAIT_INTERVAL = 0.1 # seconds
