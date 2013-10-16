@@ -11,12 +11,13 @@ Gem::Specification.new do |gem|
   gem.description = %q{Build and run system commands.}
   gem.summary     = %q{Build and run system commands.}
   gem.homepage    = "http://github.com/redding/scmd"
+  gem.license     = 'MIT'
 
   gem.files         = `git ls-files`.split($/)
   gem.executables   = gem.files.grep(%r{^bin/}).map{ |f| File.basename(f) }
   gem.test_files    = gem.files.grep(%r{^(test|spec|features)/})
   gem.require_paths = ["lib"]
 
-  gem.add_development_dependency("assert", ["~> 2.0"])
+  gem.add_development_dependency("assert", ["~> 2.3"])
   gem.add_dependency("posix-spawn")
 end
