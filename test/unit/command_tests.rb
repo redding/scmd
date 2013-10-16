@@ -1,21 +1,20 @@
 require "assert"
 require 'scmd/command'
 
-module Scmd
+class Scmd::Command
 
-  class CommandTests < Assert::Context
-    desc "a command"
+  class UnitTests < Assert::Context
+    desc "Scmd::Command"
     setup do
-      @success_cmd = Command.new("echo hi")
-      @failure_cmd = Command.new("cd /path/that/does/not/exist")
+      @success_cmd = Scmd::Command.new("echo hi")
+      @failure_cmd = Scmd::Command.new("cd /path/that/does/not/exist")
     end
     subject { @success_cmd }
 
     should have_readers :cmd_str, :pid, :exitstatus, :stdout, :stderr
-    should have_instance_methods :run, :run!
-    should have_instance_methods :start, :wait, :stop, :kill
-    should have_instance_methods :running?, :success?
-
+    should have_imeths :run, :run!
+    should have_imeths :start, :wait, :stop, :kill
+    should have_imeths :running?, :success?
 
     should "know and return its cmd string" do
       assert_equal "echo hi", subject.cmd_str
@@ -66,7 +65,7 @@ module Scmd
     end
 
     should "start and be running until `wait` is called and the cmd exits" do
-      cmd = Command.new("sleep .1")
+      cmd = Scmd::Command.new("sleep .1")
       assert_not cmd.running?
 
       cmd.start
@@ -103,10 +102,10 @@ module Scmd
 
   end
 
-  class InputTests < CommandTests
+  class InputTests < UnitTests
     desc "that takes input on stdin"
     setup do
-      @cmd = Command.new("sh")
+      @cmd = Scmd::Command.new("sh")
     end
     subject { @cmd }
 
@@ -127,10 +126,10 @@ module Scmd
 
   end
 
-  class LongRunningTests < CommandTests
+  class LongRunningTests < UnitTests
     desc "that is long running"
     setup do
-      @long_cmd = Command.new("sleep .3 && echo hi")
+      @long_cmd = Scmd::Command.new("sleep .3 && echo hi")
     end
 
     should "not timeout if wait timeout is longer than cmd time" do
@@ -143,7 +142,7 @@ module Scmd
     end
 
     should "timeout if wait timeout is shorter than cmd time" do
-      assert_raises(TimeoutError) do
+      assert_raises(Scmd::TimeoutError) do
         @long_cmd.start
         @long_cmd.wait(0.1)
       end
