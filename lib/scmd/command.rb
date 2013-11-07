@@ -11,7 +11,6 @@ module Scmd
 
   class Command
     READ_SIZE            = 10240 # bytes
-    READ_CHECK_TIMEOUT   = 0.001 # seconds
     DEFAULT_STOP_TIMEOUT = 3     # seconds
 
     attr_reader :cmd_str, :env, :options
@@ -49,25 +48,27 @@ module Scmd
 
       @pid = @child_process.pid.to_i
       @child_process.write(input)
-      @read_output_thread = Thread.new do
-        while @child_process.check_for_exit
-          begin
-            read_output
-          rescue EOFError => err
-          end
-        end
+      @wait_child_thread = Thread.new do
+        @child_process.block_wait_for_exit
         @stop_w.write_nonblock('.')
+      end
+      @read_output_thread = Thread.new do
+        begin
+          read_output(@stop_r) while @child_process.running?
+        rescue EOFError => err
+        end
       end
     end
 
     def wait(timeout = nil)
       return if !running?
 
-      wait_for_exit(timeout)
+      wait_for_exit(@stop_r, timeout)
       if @child_process.running?
         kill
         raise(TimeoutError, "`#{@cmd_str}` timed out (#{timeout}s).")
       end
+      @wait_child_thread.join
       @read_output_thread.join
 
       @stdout << @child_process.flush_stdout
@@ -116,13 +117,13 @@ module Scmd
 
     private
 
-    def read_output
-      @child_process.read(READ_SIZE){ |out, err| @stdout += out; @stderr += err }
+    def read_output(stop_pipe)
+      @child_process.read(READ_SIZE, stop_pipe){ |out, err| @stdout += out; @stderr += err }
     end
 
-    def wait_for_exit(timeout)
-      ios, _, _ = IO.select([ @stop_r ], nil, nil, timeout)
-      @stop_r.read_nonblock(1) if ios && ios.include?(@stop_r)
+    def wait_for_exit(stop_pipe, timeout)
+      ios, _, _ = IO.select([ stop_pipe ], nil, nil, timeout)
+      stop_pipe.read_nonblock(1) if ios && ios.include?(stop_pipe)
     end
 
     def reset_attrs
@@ -140,7 +141,7 @@ module Scmd
       @child_process.teardown
       [@stop_r, @stop_w].each{ |fd| fd.close if fd && !fd.closed? }
       @stop_r, @stop_w = nil, nil
-      @child_process, @read_output_thread = nil, nil
+      @child_process, @read_output_thread, @wait_cmd_thread = nil, nil, nil
       true
     end
 
@@ -176,12 +177,9 @@ module Scmd
         @wait_pid, @wait_status = nil, nil
       end
 
-      def check_for_exit
-        if @wait_pid.nil?
-          @wait_pid, @wait_status = ::Process.waitpid2(@pid, ::Process::WNOHANG)
-          @wait_pid = nil if @wait_pid == 0 # may happen on jruby
-        end
-        @wait_pid.nil?
+      def block_wait_for_exit
+        @wait_pid, @wait_status = ::Process.waitpid2(@pid)
+        @wait_pid = nil if @wait_pid == 0 # may happen on jruby
       end
 
       def running?
@@ -200,8 +198,8 @@ module Scmd
         end
       end
 
-      def read(size)
-        ios, _, _ = IO.select([ @stdout, @stderr ], nil, nil, READ_CHECK_TIMEOUT)
+      def read(size, stop_pipe)
+        ios, _, _ = IO.select([ @stdout, @stderr, stop_pipe ])
         if ios && block_given?
           yield read_if_ready(ios, @stdout, size), read_if_ready(ios, @stderr, size)
         end
