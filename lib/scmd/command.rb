@@ -10,9 +10,9 @@ require 'scmd'
 module Scmd
 
   class Command
-    READ_SIZE = 10240 # bytes
-    WAIT_INTERVAL = 0.01 # seconds
-    STOP_TIMEOUT  = 3 # seconds
+    READ_SIZE            = 10240 # bytes
+    READ_CHECK_TIMEOUT   = 0.001 # seconds
+    DEFAULT_STOP_TIMEOUT = 3     # seconds
 
     attr_reader :cmd_str
     attr_reader :pid, :exitstatus, :stdout, :stderr
@@ -28,13 +28,14 @@ module Scmd
     end
 
     def run!(input = nil)
-      called_from = caller
-
+      start_err_msg, start_err_bt = nil, nil
       begin
         start(input)
+      rescue StandardError => err
+        start_err_msg, start_err_bt = err.message, err.backtrace
       ensure
         wait # indefinitely until cmd is done running
-        raise RunError.new(@stderr, called_from) if !success?
+        raise RunError.new(start_err_msg || @stderr, start_err_bt || caller) if !success?
       end
 
       self
@@ -42,15 +43,19 @@ module Scmd
 
     def start(input = nil)
       setup
+      @stop_r, @stop_w = IO.pipe
       @child_process = ChildProcess.new(@cmd_str)
       @pid = @child_process.pid.to_i
 
       @child_process.write(input)
       @read_output_thread = Thread.new do
-        begin
-          read_output while @child_process.running?
-        rescue EOFError => err
+        while @child_process.check_for_exit
+          begin
+            read_output
+          rescue EOFError => err
+          end
         end
+        @stop_w.write_nonblock('.')
       end
     end
 
@@ -64,8 +69,8 @@ module Scmd
       end
       @read_output_thread.join
 
-      @stdout += @child_process.flush_stdout
-      @stderr += @child_process.flush_stderr
+      @stdout << @child_process.flush_stdout
+      @stderr << @child_process.flush_stderr
       @exitstatus = @child_process.exitstatus
 
       teardown
@@ -76,7 +81,7 @@ module Scmd
 
       send_term
       begin
-        wait(timeout || STOP_TIMEOUT)
+        wait(timeout || DEFAULT_STOP_TIMEOUT)
       rescue TimeoutError => err
         kill
       end
@@ -115,24 +120,20 @@ module Scmd
     end
 
     def wait_for_exit(timeout)
-      if timeout.nil?
-        @child_process.wait_for_exit
-      else
-        timeout_at = Time.now + timeout
-        while @child_process.running? && (Time.now < timeout_at)
-          sleep WAIT_INTERVAL
-          @child_process.wait_for_exit(::Process::WNOHANG)
-        end
-      end
+      ios, _, _ = IO.select([ @stop_r ], nil, nil, timeout)
+      @stop_r.read_nonblock(1) if ios && ios.include?(@stop_r)
     end
 
     def setup
       @stdout, @stderr, @pid, @exitstatus = '', '', nil, nil
+      @stop_r, @stop_w = nil, nil
       @child_process, @read_output_thread = nil, nil
     end
 
     def teardown
       @child_process.teardown
+      [@stop_r, @stop_w].each{ |fd| fd.close if fd && !fd.closed? }
+      @stop_r, @stop_w = nil, nil
       @child_process, @read_output_thread = nil, nil
       true
     end
@@ -159,6 +160,14 @@ module Scmd
         @wait_pid, @wait_status = nil, nil
       end
 
+      def check_for_exit
+        if @wait_pid.nil?
+          @wait_pid, @wait_status = ::Process.waitpid2(@pid, ::Process::WNOHANG)
+          @wait_pid = nil if @wait_pid == 0 # may happen on jruby
+        end
+        @wait_pid.nil?
+      end
+
       def running?
         @wait_pid.nil?
       end
@@ -176,8 +185,8 @@ module Scmd
       end
 
       def read(size)
-        ios, _, _ = IO.select([ @stdout, @stderr ])
-        if block_given?
+        ios, _, _ = IO.select([ @stdout, @stderr ], nil, nil, READ_CHECK_TIMEOUT)
+        if ios && block_given?
           yield read_if_ready(ios, @stdout, size), read_if_ready(ios, @stderr, size)
         end
       end
@@ -185,13 +194,8 @@ module Scmd
       def flush_stdout; @stdout.read; end
       def flush_stderr; @stderr.read; end
 
-      def wait_for_exit(*args)
-        @wait_pid, @wait_status = ::Process.waitpid2(@pid, *args)
-        @wait_pid = nil if @wait_pid == 0 # may happen on jruby
-      end
-
       def teardown
-        [@stdin, @stdout, @stderr].each{ |io| io.close if !io.closed? }
+        [@stdin, @stdout, @stderr].each{ |fd| fd.close if fd && !fd.closed? }
       end
 
       private
