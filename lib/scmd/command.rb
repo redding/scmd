@@ -19,7 +19,7 @@ module Scmd
 
     def initialize(cmd_str)
       @cmd_str = cmd_str
-      setup
+      reset_attrs
     end
 
     def run(input = nil)
@@ -42,11 +42,9 @@ module Scmd
     end
 
     def start(input = nil)
-      setup
-      @stop_r, @stop_w = IO.pipe
-      @child_process = ChildProcess.new(@cmd_str)
-      @pid = @child_process.pid.to_i
+      setup_run
 
+      @pid = @child_process.pid.to_i
       @child_process.write(input)
       @read_output_thread = Thread.new do
         while @child_process.check_for_exit
@@ -73,7 +71,7 @@ module Scmd
       @stderr << @child_process.flush_stderr
       @exitstatus = @child_process.exitstatus
 
-      teardown
+      teardown_run
     end
 
     def stop(timeout = nil)
@@ -124,13 +122,18 @@ module Scmd
       @stop_r.read_nonblock(1) if ios && ios.include?(@stop_r)
     end
 
-    def setup
+    def reset_attrs
       @stdout, @stderr, @pid, @exitstatus = '', '', nil, nil
-      @stop_r, @stop_w = nil, nil
-      @child_process, @read_output_thread = nil, nil
     end
 
-    def teardown
+    def setup_run
+      reset_attrs
+      @stop_r, @stop_w = IO.pipe
+      @read_output_thread = nil
+      @child_process = ChildProcess.new(@cmd_str)
+    end
+
+    def teardown_run
       @child_process.teardown
       [@stop_r, @stop_w].each{ |fd| fd.close if fd && !fd.closed? }
       @stop_r, @stop_w = nil, nil
