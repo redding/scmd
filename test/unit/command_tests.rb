@@ -11,7 +11,8 @@ class Scmd::Command
     end
     subject { @success_cmd }
 
-    should have_readers :cmd_str, :pid, :exitstatus, :stdout, :stderr
+    should have_readers :cmd_str, :env
+    should have_readers :pid, :exitstatus, :stdout, :stderr
     should have_imeths :run, :run!
     should have_imeths :start, :wait, :stop, :kill
     should have_imeths :running?, :success?
@@ -19,6 +20,18 @@ class Scmd::Command
     should "know and return its cmd string" do
       assert_equal "echo hi", subject.cmd_str
       assert_equal "echo hi", subject.to_s
+    end
+
+    should "default its env to an empty hash" do
+      assert_equal({}, subject.env)
+    end
+
+    should "stringify its env hash" do
+      cmd = Scmd::Command.new("echo $SCMD_TEST_VAR", {
+        :SCMD_TEST_VAR => 1
+      })
+      expected = { 'SCMD_TEST_VAR' => '1' }
+      assert_equal expected, cmd.env
     end
 
     should "default its result values" do
@@ -186,6 +199,21 @@ class Scmd::Command
       @big_cmd.start
       assert_nothing_raised{ @big_cmd.wait(1) }
       assert_equal @big_data, @big_cmd.stdout
+    end
+
+  end
+
+  class WithEnvVarTests < UnitTests
+    desc "with environment variables"
+    setup do
+      @cmd = Scmd::Command.new("echo $SCMD_TEST_VAR", {
+        'SCMD_TEST_VAR' => 'test'
+      })
+    end
+
+    should "use them when running the command" do
+      @cmd.run
+      assert_equal "test\n", @cmd.stdout
     end
 
   end
