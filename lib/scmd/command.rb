@@ -14,11 +14,12 @@ module Scmd
     READ_CHECK_TIMEOUT   = 0.001 # seconds
     DEFAULT_STOP_TIMEOUT = 3     # seconds
 
-    attr_reader :cmd_str
+    attr_reader :cmd_str, :env
     attr_reader :pid, :exitstatus, :stdout, :stderr
 
-    def initialize(cmd_str)
+    def initialize(cmd_str, env = nil)
       @cmd_str = cmd_str
+      @env     = stringify_hash(env || {})
       reset_attrs
     end
 
@@ -130,7 +131,7 @@ module Scmd
       reset_attrs
       @stop_r, @stop_w = IO.pipe
       @read_output_thread = nil
-      @child_process = ChildProcess.new(@cmd_str)
+      @child_process = ChildProcess.new(@cmd_str, @env)
     end
 
     def teardown_run
@@ -154,12 +155,18 @@ module Scmd
       ::Process.kill sig, @child_process.pid
     end
 
+    def stringify_hash(hash)
+      hash.inject({}) do |h, (k, v)|
+        h.merge(k.to_s => v.to_s)
+      end
+    end
+
     class ChildProcess
 
       attr_reader :pid, :stdin, :stdout, :stderr
 
-      def initialize(cmd_str)
-        @pid, @stdin, @stdout, @stderr = *::POSIX::Spawn::popen4(cmd_str)
+      def initialize(cmd_str, env)
+        @pid, @stdin, @stdout, @stderr = *::POSIX::Spawn::popen4(env, cmd_str)
         @wait_pid, @wait_status = nil, nil
       end
 
