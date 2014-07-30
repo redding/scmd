@@ -197,7 +197,7 @@ class Scmd::Command
       assert_equal @small_data, @small_cmd.stdout
 
       @big_cmd.start
-      assert_nothing_raised{ @big_cmd.wait(1) }
+      assert_nothing_raised{ @big_cmd.wait(2) }
       assert_equal @big_data, @big_cmd.stdout
     end
 
