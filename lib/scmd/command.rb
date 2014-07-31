@@ -86,10 +86,10 @@ module Scmd
       end
     end
 
-    def kill
+    def kill(sig = nil)
       return if !running?
 
-      send_kill
+      send_kill(sig)
       wait # indefinitely until cmd is killed
     end
 
@@ -146,8 +146,8 @@ module Scmd
       send_signal 'TERM'
     end
 
-    def send_kill
-      send_signal 'KILL'
+    def send_kill(sig = nil)
+      send_signal(sig || 'KILL')
     end
 
     def send_signal(sig)
