@@ -152,7 +152,7 @@ module Scmd
 
     def send_signal(sig)
       return if !running?
-      ::Process.kill sig, @child_process.pid
+      @child_process.send_signal(sig)
     end
 
     def stringify_hash(hash)
@@ -201,6 +201,10 @@ module Scmd
         end
       end
 
+      def send_signal(sig)
+        process_kill(sig, self.pid)
+      end
+
       def flush_stdout; @stdout.read; end
       def flush_stderr; @stderr.read; end
 
@@ -216,6 +220,19 @@ module Scmd
 
       def read_by_size(io, size)
         io.read_nonblock(size)
+      end
+
+      def process_kill(sig, pid)
+        child_pids(pid).each{ |p| process_kill(sig, p) }
+        ::Process.kill(sig, pid)
+      end
+
+      def child_pids(pid)
+        Command.new("#{pgrep} -P #{pid}").run.stdout.split("\n").map(&:to_i)
+      end
+
+      def pgrep
+        @pgrep ||= Command.new('which pgrep').run.stdout.strip
       end
 
     end
