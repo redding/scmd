@@ -122,6 +122,13 @@ class Scmd::Command
       assert_not @long_cmd.running?
     end
 
+    should "be killable with a non-default signal" do
+      @long_cmd.start
+      @long_cmd.kill('INT')
+
+      assert_not @long_cmd.running?
+    end
+
   end
 
   class BufferDeadlockTests < SystemTests
