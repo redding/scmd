@@ -19,5 +19,5 @@ Gem::Specification.new do |gem|
   gem.require_paths = ["lib"]
 
   gem.add_development_dependency("assert", ["~> 2.3"])
-  gem.add_dependency("posix-spawn")
+  gem.add_dependency("posix-spawn", ["= 0.3.8"])
 end
