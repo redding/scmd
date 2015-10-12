@@ -10,7 +10,7 @@ class Scmd::Command
     end
     subject { @cmd }
 
-    should have_readers :cmd_str, :env
+    should have_readers :cmd_str, :env, :options
     should have_readers :pid, :exitstatus, :stdout, :stderr
     should have_imeths :run, :run!
     should have_imeths :start, :wait, :stop, :kill
@@ -27,10 +27,14 @@ class Scmd::Command
 
     should "stringify its env hash" do
       cmd = Scmd::Command.new("echo $SCMD_TEST_VAR", {
-        :SCMD_TEST_VAR => 1
+        :env => { :SCMD_TEST_VAR => 1 }
       })
       expected = { 'SCMD_TEST_VAR' => '1' }
       assert_equal expected, cmd.env
+    end
+
+    should "default its options to an empty hash" do
+      assert_equal({}, subject.options)
     end
 
     should "default its result values" do
