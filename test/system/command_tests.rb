@@ -159,13 +159,34 @@ class Scmd::Command
     desc "with environment variables"
     setup do
       @cmd = Scmd::Command.new("echo $SCMD_TEST_VAR", {
-        'SCMD_TEST_VAR' => 'test'
+        :env => { 'SCMD_TEST_VAR' => 'test' }
       })
     end
 
     should "use them when running the command" do
       @cmd.run
+      assert @cmd.success?
       assert_equal "test\n", @cmd.stdout
+    end
+
+  end
+
+  class WithOptionsTests < SystemTests
+    desc "with options"
+    setup do
+      @path = "/"
+      # `chdir` is the only one that reliably worked
+      @cmd = Scmd::Command.new("pwd", {
+        :options => { :chdir => @path }
+      })
+    end
+
+    should "use them when running the command" do
+      @cmd.run
+      assert @cmd.success?
+      # if the option didn't work or was ignored it would use this process' dir
+      assert_not_equal "#{Dir.pwd}\n", @cmd.stdout
+      assert_equal "#{@path}\n", @cmd.stdout
     end
 
   end

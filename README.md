@@ -94,6 +94,33 @@ Raise an exception if not successful with `run!`:
 Scmd.new("cd /path/that/does/not/exist").run! #=> Scmd::Command::Failure
 ```
 
+### Environment variables
+
+Pass environment variables:
+
+```ruby
+cmd = Scmd.new("echo $TEST_VAR", {
+  :env => {
+    'TEST_VAR' => 'hi'
+  }
+})
+```
+
+### Process spawn options
+
+Pass options:
+
+```ruby
+reader, writer = IO.pipe
+# this is an example that uses file descriptor redirection options
+cmd = Scmd.new("echo test 1>&#{writer.fileno}", {
+  :options => { writer => writer }
+})
+reader.gets # => "test\n"
+```
+
+For all the possible options see [posix-spawn](https://github.com/rtomayko/posix-spawn#status).
+
 ## Installation
 
 Add this line to your application's Gemfile:

@@ -14,12 +14,14 @@ module Scmd
     READ_CHECK_TIMEOUT   = 0.001 # seconds
     DEFAULT_STOP_TIMEOUT = 3     # seconds
 
-    attr_reader :cmd_str, :env
+    attr_reader :cmd_str, :env, :options
     attr_reader :pid, :exitstatus, :stdout, :stderr
 
-    def initialize(cmd_str, env = nil)
+    def initialize(cmd_str, opts = nil)
+      opts ||= {}
       @cmd_str = cmd_str
-      @env     = stringify_hash(env || {})
+      @env     = stringify_hash(opts[:env] || {})
+      @options = opts[:options] || {}
       reset_attrs
     end
 
@@ -131,7 +133,7 @@ module Scmd
       reset_attrs
       @stop_r, @stop_w = IO.pipe
       @read_output_thread = nil
-      @child_process = ChildProcess.new(@cmd_str, @env)
+      @child_process = ChildProcess.new(@cmd_str, @env, @options)
     end
 
     def teardown_run
@@ -165,8 +167,12 @@ module Scmd
 
       attr_reader :pid, :stdin, :stdout, :stderr
 
-      def initialize(cmd_str, env)
-        @pid, @stdin, @stdout, @stderr = *::POSIX::Spawn::popen4(env, cmd_str)
+      def initialize(cmd_str, env, options)
+        @pid, @stdin, @stdout, @stderr = *::POSIX::Spawn::popen4(
+          env,
+          cmd_str,
+          options
+        )
         @wait_pid, @wait_status = nil, nil
       end
 
