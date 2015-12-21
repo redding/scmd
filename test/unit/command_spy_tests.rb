@@ -13,8 +13,16 @@ class Scmd::CommandSpy
 
   class InitTests < UnitTests
     setup do
+      @orig_scmd_test_mode = ENV['SCMD_TEST_MODE']
+      ENV['SCMD_TEST_MODE'] = '1'
+      Scmd.reset
+
       @cmd_str = Factory.string
       @spy = @spy_class.new(@cmd_str)
+    end
+    teardown do
+      Scmd.reset
+      ENV['SCMD_TEST_MODE'] = @orig_scmd_test_mode
     end
     subject{ @spy }
 
@@ -44,9 +52,8 @@ class Scmd::CommandSpy
       assert_equal [], subject.stop_calls
       assert_equal [], subject.kill_calls
 
-      assert_nil subject.pid
-      assert_nil subject.exitstatus
-
+      assert_equal 1,  subject.pid
+      assert_equal 0,  subject.exitstatus
       assert_equal '', subject.stdout
       assert_equal '', subject.stderr
     end
@@ -85,13 +92,13 @@ class Scmd::CommandSpy
     end
 
     should "know if it was successful" do
-      assert_false subject.success?
-
-      subject.exitstatus = 0
       assert_true subject.success?
 
       subject.exitstatus = 1
       assert_false subject.success?
+
+      subject.exitstatus = 0
+      assert_true subject.success?
 
       subject.exitstatus = Factory.string
       assert_false subject.success?
@@ -105,8 +112,15 @@ class Scmd::CommandSpy
       assert_kind_of InputCall, subject.run_calls.first
       assert_equal input, subject.run_calls.first.input
 
+      assert_equal 1, Scmd.calls.size
+      assert_kind_of Scmd::Call, Scmd.calls.first
+      assert_equal @cmd_str, Scmd.calls.first.cmd_str
+      assert_equal input,    Scmd.calls.first.input
+      assert_equal subject,  Scmd.calls.first.cmd
+
       subject.run(Factory.string)
       assert_equal 2, subject.run_calls.size
+      assert_equal 2, Scmd.calls.size
     end
 
     should "track its run! calls" do
@@ -117,8 +131,15 @@ class Scmd::CommandSpy
       assert_kind_of InputCall, subject.run_bang_calls.first
       assert_equal input, subject.run_bang_calls.first.input
 
+      assert_equal 1, Scmd.calls.size
+      assert_kind_of Scmd::Call, Scmd.calls.first
+      assert_equal @cmd_str, Scmd.calls.first.cmd_str
+      assert_equal input,    Scmd.calls.first.input
+      assert_equal subject,  Scmd.calls.first.cmd
+
       subject.run!(Factory.string)
       assert_equal 2, subject.run_bang_calls.size
+      assert_equal 2, Scmd.calls.size
     end
 
     should "track its start calls" do
@@ -129,8 +150,15 @@ class Scmd::CommandSpy
       assert_kind_of InputCall, subject.start_calls.first
       assert_equal input, subject.start_calls.first.input
 
+      assert_equal 1, Scmd.calls.size
+      assert_kind_of Scmd::Call, Scmd.calls.first
+      assert_equal @cmd_str, Scmd.calls.first.cmd_str
+      assert_equal input,    Scmd.calls.first.input
+      assert_equal subject,  Scmd.calls.first.cmd
+
       subject.start(Factory.string)
       assert_equal 2, subject.start_calls.size
+      assert_equal 2, Scmd.calls.size
     end
 
     should "track its wait calls" do
@@ -167,6 +195,32 @@ class Scmd::CommandSpy
 
       subject.kill(Factory.string)
       assert_equal 2, subject.kill_calls.size
+    end
+
+    should "know if it is equal to another cmd spy" do
+      spy1 = @spy_class.new(@cmd_str)
+      spy2 = @spy_class.new(@cmd_str)
+
+      assert_equal spy1, spy2
+
+      a = [
+        :cmd_str,
+        :env,
+        :options,
+        :run_calls,
+        :run_bang_calls,
+        :start_calls,
+        :wait_calls,
+        :stop_calls,
+        :kill_calls,
+        :pid,
+        :exitstatus,
+        :stdout,
+        :stderr
+      ].choice
+      Assert.stub(spy2, a){ Factory.string }
+
+      assert_not_equal spy1, spy2
     end
 
   end

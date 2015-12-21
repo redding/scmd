@@ -121,6 +121,71 @@ reader.gets # => "test\n"
 
 For all the possible options see [posix-spawn](https://github.com/rtomayko/posix-spawn#status).
 
+## Testing
+
+Scmd comes with some testing utilities built in.  Specifically this includes a command spy and a "test mode" API on the main `Scmd` namespace.
+
+### Command Spy
+
+```ruby
+require 'scmd/command_spy'
+spy = Scmd::CommandSpy.new(cmd_str)
+spy.exitstatus = 1
+spy.stdout = 'some test output'
+Assert.stub(Scmd, :new).with(cmd_str){ spy }
+
+cmd = Scmd.new(cmd_str) # => spy
+cmd.run('some input')
+
+cmd.run_called?           # => true
+cmd.run_calls.size        # => 1
+cmd.run_calls.first.input # => 'some input'
+```
+
+The spy is useful for stubbing out system commands that you don't want to call or aren't safe to call in the test suite.  It responds to the same API that commands do but doesn't run any system commands.
+
+### "Test Mode" API
+
+```ruby
+Scmd.add_command(cmd_str){ |cmd| cmd.stdout = 'some output' } # => raises NoMethodError
+
+ENV['SCMD_TEST_MODE'] = '1'
+Scmd.add_command(cmd_str){ |cmd| cmd.stdout = 'some output' }
+Scmd.add_command(cmd_str).with({:env => { :SOME_ENV_VAR => '1' }}) do |cmd|
+  cmd.stdout = 'some other output'
+end
+Scmd.commands.empty? # => false
+
+cmd = Scmd.new(cmd_str)
+cmd.class                 # => Scmd::CommandSpy
+cmd.stdout                # => 'some output'
+cmd.run('some input')
+Scmd.calls.size           # => 1
+Scmd.calls.last.class     # => Scmd::Call
+Scmd.calls.last.cmd_str   # => cmd_str
+Scmd.calls.last.input     # => 'some input'
+Scmd.calls.last.cmd.class # => Scmd::CommandSpy
+
+cmd = Scmd.new(cmd_str, {:env => { 'SOME_ENV_VAR' => '1' }})
+cmd.class                 # => Scmd::CommandSpy
+cmd.stdout                # => 'some other output'
+cmd.run('some input')
+Scmd.calls.size           # => 2
+Scmd.calls.last.class     # => Scmd::Call
+Scmd.calls.last.cmd_str   # => cmd_str
+Scmd.calls.last.input     # => 'some input'
+Scmd.calls.last.cmd.class # => Scmd::CommandSpy
+Scmd.calls.last.cmd.env   # => { 'SOME_ENV_VAR' => '1' }
+
+Scmd.reset
+Scmd.commands.empty? # => true
+Scmd.calls.empty?    # => true
+```
+
+Use these singleton methods on the `Scmd` namespace to add specific command spies in specific contexts and to track command calls (runs, starts).  Use `reset` to reset the state of things.
+
+**Note:** these methods are only available when test mode is enabled (when the `SCMD_TEST_MODE` env var has a non-falsey value).  Otherwise these methods will raise `NoMethodError`.
+
 ## Installation
 
 Add this line to your application's Gemfile:
