@@ -20,11 +20,12 @@ module Scmd
 
       @running = false
 
-      @stdout, @stderr, @pid, @exitstatus = '', '', nil, nil
+      @stdout, @stderr, @pid, @exitstatus = '', '', 1, 0
     end
 
     def run(input = nil)
       @run_calls.push(InputCall.new(input))
+      Scmd.calls.push(Scmd::Call.new(self, input))
       self
     end
 
@@ -34,6 +35,7 @@ module Scmd
 
     def run!(input = nil)
       @run_bang_calls.push(InputCall.new(input))
+      Scmd.calls.push(Scmd::Call.new(self, input))
       self
     end
 
@@ -43,6 +45,7 @@ module Scmd
 
     def start(input = nil)
       @start_calls.push(InputCall.new(input))
+      Scmd.calls.push(Scmd::Call.new(self, input))
       @running = true
     end
 
@@ -87,6 +90,26 @@ module Scmd
 
     def to_s
       @cmd_str.to_s
+    end
+
+    def ==(other_spy)
+      if other_spy.kind_of?(CommandSpy)
+        self.cmd_str         == other_spy.cmd_str        &&
+        self.env             == other_spy.env            &&
+        self.options         == other_spy.options        &&
+        self.run_calls       == other_spy.run_calls      &&
+        self.run_bang_calls  == other_spy.run_bang_calls &&
+        self.start_calls     == other_spy.start_calls    &&
+        self.wait_calls      == other_spy.wait_calls     &&
+        self.stop_calls      == other_spy.stop_calls     &&
+        self.kill_calls      == other_spy.kill_calls     &&
+        self.pid             == other_spy.pid            &&
+        self.exitstatus      == other_spy.exitstatus     &&
+        self.stdout          == other_spy.stdout         &&
+        self.stderr          == other_spy.stderr
+      else
+        super
+      end
     end
 
     InputCall   = Struct.new(:input)
