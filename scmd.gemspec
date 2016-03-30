@@ -8,8 +8,8 @@ Gem::Specification.new do |gem|
   gem.version     = Scmd::VERSION
   gem.authors     = ["Kelly Redding", "Collin Redding"]
   gem.email       = ["kelly@kellyredding.com", "collin.redding@me.com"]
-  gem.description = %q{Build and run system commands.}
   gem.summary     = %q{Build and run system commands.}
+  gem.description = %q{Build and run system commands.}
   gem.homepage    = "http://github.com/redding/scmd"
   gem.license     = 'MIT'
 
@@ -18,6 +18,8 @@ Gem::Specification.new do |gem|
   gem.test_files    = gem.files.grep(%r{^(test|spec|features)/})
   gem.require_paths = ["lib"]
 
-  gem.add_development_dependency("assert", ["~> 2.15"])
+  gem.add_development_dependency("assert", ["~> 2.15.1"])
+
   gem.add_dependency("posix-spawn", ["~> 0.3.11"])
+
 end
