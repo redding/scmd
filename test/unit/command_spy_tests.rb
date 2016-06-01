@@ -217,7 +217,7 @@ class Scmd::CommandSpy
         :exitstatus,
         :stdout,
         :stderr
-      ].choice
+      ].sample
       Assert.stub(spy2, a){ Factory.string }
 
       assert_not_equal spy1, spy2

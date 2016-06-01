@@ -137,7 +137,7 @@ class Scmd::StoredCommands
       stub2 = Stub.new(@cmd_str)
       assert_equal stub1, stub2
 
-      Assert.stub(stub1, [:cmd_str, :hash].choice){ Factory.string }
+      Assert.stub(stub1, [:cmd_str, :hash].sample){ Factory.string }
       assert_not_equal stub1, stub2
     end
 
