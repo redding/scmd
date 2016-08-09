@@ -161,6 +161,22 @@ class Scmd::CommandSpy
       assert_equal 2, Scmd.calls.size
     end
 
+    should "not track global run, run! or start calls if not in test mode" do
+      ENV.delete('SCMD_TEST_MODE')
+
+      input = Factory.string
+      # if `Scmd.calls` is called when not in test mode it will raise an error,
+      # so if no error is raised then it didn't try to add the call
+      assert_raises(NoMethodError){ Scmd.calls }
+      assert_nothing_raised do
+        subject.run(input)
+        subject.run!(input)
+        subject.start(input)
+      end
+
+      ENV['SCMD_TEST_MODE'] = '1'
+    end
+
     should "track its wait calls" do
       timeout = Factory.string
       subject.wait(timeout)

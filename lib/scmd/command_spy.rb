@@ -25,7 +25,7 @@ module Scmd
 
     def run(input = nil)
       @run_calls.push(InputCall.new(input))
-      Scmd.calls.push(Scmd::Call.new(self, input))
+      Scmd.calls.push(Scmd::Call.new(self, input)) if ENV['SCMD_TEST_MODE']
       self
     end
 
@@ -35,7 +35,7 @@ module Scmd
 
     def run!(input = nil)
       @run_bang_calls.push(InputCall.new(input))
-      Scmd.calls.push(Scmd::Call.new(self, input))
+      Scmd.calls.push(Scmd::Call.new(self, input)) if ENV['SCMD_TEST_MODE']
       self
     end
 
@@ -45,7 +45,7 @@ module Scmd
 
     def start(input = nil)
       @start_calls.push(InputCall.new(input))
-      Scmd.calls.push(Scmd::Call.new(self, input))
+      Scmd.calls.push(Scmd::Call.new(self, input)) if ENV['SCMD_TEST_MODE']
       @running = true
     end
 
