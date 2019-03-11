@@ -42,7 +42,7 @@ cmd.start
 
 begin
   cmd.wait(10)
-rescue Scmd::Timeout => err
+rescue Scmd::TimeoutError => err
   cmd.stop # attempt to stop the cmd nicely, kill if doesn't stop in time
   cmd.kill # just kill the cmd now
 end
