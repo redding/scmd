@@ -2,79 +2,79 @@ echo hi: 1 times
 ----------------
 whysoslow? ..
 
-mem @ start             29 MB                   ??
-mem @ finish            29 MB                   [31m+   0 MB,   0%[0m
+mem @ start             17 MB                   ??
+mem @ finish            17 MB                   [31m+   0 MB,   0%[0m
 
-         user     system   total    real
-time     0.0 ms   0.0 ms   0.0 ms   1.928 ms
+                      user                  system                total                 real
+time                  0.5820000000000001 ms 0.5519999999999999 ms 3.786 ms              3.7030000000000003 ms
 
 echo hi: 10 times
 -----------------
 whysoslow? ..
 
-mem @ start             38 MB                   ??
-mem @ finish            38 MB                   [32m-   0 MB,   0%[0m
+mem @ start             17 MB                   ??
+mem @ finish            17 MB                   [31m+   0 MB,   0%[0m
 
-          user      system    total     real
-time      0.0 ms    0.0 ms    10.0 ms   16.874 ms
+                      user                  system                total                 real
+time                  2.475 ms              3.822 ms              32.675999999999995 ms 34.702 ms
 
 echo hi: 100 times
 ------------------
 whysoslow? ..
 
-mem @ start             38 MB                   ??
-mem @ finish            38 MB                   [32m-   0 MB,   0%[0m
+mem @ start             17 MB                   ??
+mem @ finish            18 MB                   [31m+   0 MB,   2%[0m
 
-           user       system     total      real
-time       20.0 ms    20.0 ms    130.0 ms   147.925 ms
+                      user                  system                total                 real
+time                  19.75 ms              31.77 ms              281.766 ms            306.74899999999997 ms
 
 echo hi: 1000 times
 -------------------
 whysoslow? ..
 
-mem @ start             38 MB                   ??
-mem @ finish            41 MB                   [31m+   3 MB,   7%[0m
+mem @ start             18 MB                   ??
+mem @ finish            29 MB                   [31m+  11 MB,  61%[0m
 
-            user        system      total       real
-time        170.0 ms    180.0 ms    1320.0 ms   1390.406 ms
+                      user                  system                total                 real
+time                  161.98399999999998 ms 271.296 ms            2432.76 ms            2662.98 ms
 
 cat test/support/bigger-than-64k.txt: 1 times
 ---------------------------------------------
 whysoslow? ..
 
-mem @ start             41 MB                   ??
-mem @ finish            41 MB                   [32m-   0 MB,   0%[0m
+mem @ start             31 MB                   ??
+mem @ finish            31 MB                   [31m+   0 MB,   1%[0m
 
-         user     system   total    real
-time     0.0 ms   0.0 ms   0.0 ms   3.487 ms
+                     user                 system               total                real
+time                 0.412 ms             0.504 ms             4.343999999999999 ms 4.654 ms
 
 cat test/support/bigger-than-64k.txt: 10 times
 ----------------------------------------------
 whysoslow? ..
 
-mem @ start             41 MB                   ??
-mem @ finish            43 MB                   [31m+   2 MB,   4%[0m
+mem @ start             31 MB                   ??
+mem @ finish            34 MB                   [31m+   2 MB,   7%[0m
 
-          user      system    total     real
-time      0.0 ms    0.0 ms    20.0 ms   30.533 ms
+                      user                  system                total                 real
+time                  3.2880000000000003 ms 4.386 ms              43.447 ms             46.552 ms
 
 cat test/support/bigger-than-64k.txt: 100 times
 -----------------------------------------------
 whysoslow? ..
 
-mem @ start             43 MB                   ??
-mem @ finish            85 MB                   [31m+  42 MB,  98%[0m
+mem @ start             33 MB                   ??
+mem @ finish            56 MB                   [31m+  23 MB,  68%[0m
 
-          user      system    total     real
-time      40.0 ms   40.0 ms   250.0 ms  274.06 ms
+                      user                  system                total                 real
+time                  28.892999999999997 ms 40.599000000000004 ms 407.804 ms            440.11 ms
 
 cat test/support/bigger-than-64k.txt: 1000 times
 ------------------------------------------------
 whysoslow? ..
 
-mem @ start             85 MB                   ??
-mem @ finish            506 MB                  [31m+ 421 MB, 497%[0m
+mem @ start             44 MB                   ??
+mem @ finish            297 MB                  [31m+ 254 MB, 582%[0m
 
-            user        system      total       real
-time        360.0 ms    400.0 ms    2540.0 ms   2649.686 ms
+                     user                 system               total                real
+time                 285.236 ms           408.677 ms           4097.647 ms          4428.276999999999 ms
 

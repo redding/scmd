@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 # this file is automatically required when you run `assert`
 # put any test helpers here
 
@@ -6,14 +8,14 @@ ROOT_PATH = File.expand_path("../..", __FILE__)
 $LOAD_PATH.unshift(ROOT_PATH)
 
 # require pry for debugging (`binding.pry`)
-require 'pry'
+require "pry"
 
-require 'test/support/factory'
+require "test/support/factory"
 
 # 1.8.7 backfills
 
 # Array#sample
-if !(a = Array.new).respond_to?(:sample) && a.respond_to?(:choice)
+if !(a = []).respond_to?(:sample) && a.respond_to?(:choice)
   class Array
     alias_method :sample, :choice
   end

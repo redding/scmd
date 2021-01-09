@@ -1,9 +1,9 @@
-require 'scmd'
+# frozen_string_literal: true
+
+require "scmd"
 
 module Scmd
-
   class CommandSpy
-
     attr_reader :cmd_str, :env, :options
     attr_reader :run_calls, :run_bang_calls, :start_calls
     attr_reader :wait_calls, :stop_calls, :kill_calls
@@ -20,12 +20,12 @@ module Scmd
 
       @running = false
 
-      @stdout, @stderr, @pid, @exitstatus = '', '', 1, 0
+      @stdout, @stderr, @pid, @exitstatus = "", "", 1, 0
     end
 
     def run(input = nil)
       @run_calls.push(InputCall.new(input))
-      Scmd.calls.push(Scmd::Call.new(self, input)) if ENV['SCMD_TEST_MODE']
+      Scmd.calls.push(Scmd::Call.new(self, input)) if ENV["SCMD_TEST_MODE"]
       self
     end
 
@@ -35,7 +35,7 @@ module Scmd
 
     def run!(input = nil)
       @run_bang_calls.push(InputCall.new(input))
-      Scmd.calls.push(Scmd::Call.new(self, input)) if ENV['SCMD_TEST_MODE']
+      Scmd.calls.push(Scmd::Call.new(self, input)) if ENV["SCMD_TEST_MODE"]
       self
     end
 
@@ -45,7 +45,7 @@ module Scmd
 
     def start(input = nil)
       @start_calls.push(InputCall.new(input))
-      Scmd.calls.push(Scmd::Call.new(self, input)) if ENV['SCMD_TEST_MODE']
+      Scmd.calls.push(Scmd::Call.new(self, input)) if ENV["SCMD_TEST_MODE"]
       @running = true
     end
 
@@ -92,21 +92,21 @@ module Scmd
       @cmd_str.to_s
     end
 
-    def ==(other_spy)
-      if other_spy.kind_of?(CommandSpy)
-        self.cmd_str         == other_spy.cmd_str        &&
-        self.env             == other_spy.env            &&
-        self.options         == other_spy.options        &&
-        self.run_calls       == other_spy.run_calls      &&
-        self.run_bang_calls  == other_spy.run_bang_calls &&
-        self.start_calls     == other_spy.start_calls    &&
-        self.wait_calls      == other_spy.wait_calls     &&
-        self.stop_calls      == other_spy.stop_calls     &&
-        self.kill_calls      == other_spy.kill_calls     &&
-        self.pid             == other_spy.pid            &&
-        self.exitstatus      == other_spy.exitstatus     &&
-        self.stdout          == other_spy.stdout         &&
-        self.stderr          == other_spy.stderr
+    def ==(other)
+      if other.is_a?(CommandSpy)
+        cmd_str         == other.cmd_str        &&
+        env             == other.env            &&
+        options         == other.options        &&
+        run_calls       == other.run_calls      &&
+        run_bang_calls  == other.run_bang_calls &&
+        start_calls     == other.start_calls    &&
+        wait_calls      == other.wait_calls     &&
+        stop_calls      == other.stop_calls     &&
+        kill_calls      == other.kill_calls     &&
+        pid             == other.pid            &&
+        exitstatus      == other.exitstatus     &&
+        stdout          == other.stdout         &&
+        stderr          == other.stderr
       else
         super
       end
@@ -115,7 +115,5 @@ module Scmd
     InputCall   = Struct.new(:input)
     TimeoutCall = Struct.new(:timeout)
     SignalCall  = Struct.new(:signal)
-
   end
-
 end

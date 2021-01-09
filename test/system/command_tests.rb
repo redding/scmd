@@ -1,8 +1,9 @@
+# frozen_string_literal: true
+
 require "assert"
-require 'scmd/command'
+require "scmd/command"
 
 class Scmd::Command
-
   class SystemTests < Assert::Context
     desc "Scmd::Command"
     setup do
@@ -17,27 +18,28 @@ class Scmd::Command
       assert_equal 0, @success_cmd.exitstatus
       assert @success_cmd.success?
       assert_equal "hi\n", @success_cmd.stdout
-      assert_equal '', @success_cmd.stderr
+      assert_equal "", @success_cmd.stderr
 
       @failure_cmd.run
 
       assert_not_nil @failure_cmd.pid
       assert_not_equal 0, @failure_cmd.exitstatus
       assert_not @failure_cmd.success?
-      assert_equal '', @failure_cmd.stdout
-      assert_not_equal '', @failure_cmd.stderr
+      assert_equal "", @failure_cmd.stdout
+      assert_not_equal "", @failure_cmd.stderr
     end
 
     should "raise an exception with proper backtrace on `run!`" do
-      err = begin;
-        @failure_cmd.run!
-      rescue Exception => err
-        err
-      end
+      err =
+        begin
+          @failure_cmd.run!
+        rescue => ex
+          ex
+        end
 
       assert_kind_of Scmd::RunError, err
-      assert_includes 'No such file or directory', err.message
-      assert_includes 'test/system/command_tests.rb:', err.backtrace.first
+      assert_includes "No such file or directory", err.message
+      assert_includes "test/system/command_tests.rb:", err.backtrace.first
     end
 
     should "return itself on `run`, `run!`" do
@@ -57,7 +59,6 @@ class Scmd::Command
       cmd.wait
       assert_not cmd.running?
     end
-
   end
 
   class InputTests < SystemTests
@@ -65,7 +66,7 @@ class Scmd::Command
     setup do
       @cmd = Scmd::Command.new("sh")
     end
-    subject { @cmd }
+    subject{ @cmd }
 
     should "run the command given a single line of input" do
       subject.run "echo hi"
@@ -81,7 +82,6 @@ class Scmd::Command
       assert_equal "hi\n",  @cmd.stdout
       assert_equal "err\n", @cmd.stderr
     end
-
   end
 
   class LongRunningTests < SystemTests
@@ -124,21 +124,20 @@ class Scmd::Command
 
     should "be killable with a non-default signal" do
       @long_cmd.start
-      @long_cmd.kill('INT')
+      @long_cmd.kill("INT")
 
       assert_not @long_cmd.running?
     end
-
   end
 
   class BufferDeadlockTests < SystemTests
     desc "when capturing data from an output buffer"
     setup do
-      @small_path = File.join(ROOT_PATH, 'test/support/smaller-than-64k.txt')
+      @small_path = File.join(ROOT_PATH, "test/support/smaller-than-64k.txt")
       @small_data = File.read(@small_path)
       @small_cmd  = Scmd::Command.new("cat #{@small_path}")
 
-      @big_path = File.join(ROOT_PATH, 'test/support/bigger-than-64k.txt')
+      @big_path = File.join(ROOT_PATH, "test/support/bigger-than-64k.txt")
       @big_data = File.read(@big_path)
       @big_cmd  = Scmd::Command.new("cat #{@big_path}")
     end
@@ -152,15 +151,14 @@ class Scmd::Command
       assert_nothing_raised{ @big_cmd.wait(1) }
       assert_equal @big_data, @big_cmd.stdout
     end
-
   end
 
   class WithEnvVarTests < SystemTests
     desc "with environment variables"
     setup do
       @cmd = Scmd::Command.new("echo $SCMD_TEST_VAR", {
-        :env => { 'SCMD_TEST_VAR' => 'test' }
-      })
+        env: { "SCMD_TEST_VAR" => "test" },
+      },)
     end
 
     should "use them when running the command" do
@@ -168,7 +166,6 @@ class Scmd::Command
       assert @cmd.success?
       assert_equal "test\n", @cmd.stdout
     end
-
   end
 
   class WithOptionsTests < SystemTests
@@ -177,8 +174,8 @@ class Scmd::Command
       @path = "/"
       # `chdir` is the only one that reliably worked
       @cmd = Scmd::Command.new("pwd", {
-        :options => { :chdir => @path }
-      })
+        options: { chdir: @path },
+      },)
     end
 
     should "use them when running the command" do
@@ -188,7 +185,5 @@ class Scmd::Command
       assert_not_equal "#{Dir.pwd}\n", @cmd.stdout
       assert_equal "#{@path}\n", @cmd.stdout
     end
-
   end
-
 end

@@ -1,9 +1,9 @@
-require 'scmd/command_spy'
+# frozen_string_literal: true
+
+require "scmd/command_spy"
 
 module Scmd
-
   class StoredCommands
-
     attr_reader :hash
 
     def initialize
@@ -30,16 +30,15 @@ module Scmd
       @hash.empty?
     end
 
-    def ==(other_stored_commands)
-      if other_stored_commands.kind_of?(StoredCommands)
-        self.hash == other_stored_commands.hash
+    def ==(other)
+      if other.is_a?(StoredCommands)
+        hash == other.hash
       else
         super
       end
     end
 
     class Stub
-
       attr_reader :cmd_str, :hash
 
       def initialize(cmd_str)
@@ -62,17 +61,14 @@ module Scmd
         CommandSpy.new(@cmd_str, opts).tap(&block)
       end
 
-      def ==(other_stub)
-        if other_stub.kind_of?(Stub)
-          self.cmd_str == other_stub.cmd_str &&
-          self.hash    == other_stub.hash
+      def ==(other)
+        if other.is_a?(Stub)
+          cmd_str == other.cmd_str &&
+          hash    == other.hash
         else
           super
         end
       end
-
     end
-
   end
-
 end

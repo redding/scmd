@@ -1,6 +1,8 @@
-require 'thread'
-require 'posix-spawn'
-require 'scmd'
+# frozen_string_literal: true
+
+require "thread"
+require "posix-spawn"
+require "scmd"
 
 # Scmd::Command is a base wrapper for handling system commands. Initialize it
 # with with a string specifying the command to execute.  You can then run the
@@ -8,7 +10,6 @@ require 'scmd'
 # create a more custom command wrapper.
 
 module Scmd
-
   class Command
     READ_SIZE            = 10240 # bytes
     READ_CHECK_TIMEOUT   = 0.001 # seconds
@@ -26,7 +27,11 @@ module Scmd
     end
 
     def run(input = nil)
-      run!(input) rescue RunError
+      begin
+        run!(input)
+      rescue
+        RunError
+      end
       self
     end
 
@@ -34,11 +39,13 @@ module Scmd
       start_err_msg, start_err_bt = nil, nil
       begin
         start(input)
-      rescue StandardError => err
-        start_err_msg, start_err_bt = err.message, err.backtrace
+      rescue => ex
+        start_err_msg, start_err_bt = ex.message, ex.backtrace
       ensure
         wait # indefinitely until cmd is done running
-        raise RunError.new(start_err_msg || @stderr, start_err_bt || caller) if !success?
+        unless success?
+          raise RunError.new(start_err_msg || @stderr, start_err_bt || caller)
+        end
       end
 
       self
@@ -53,15 +60,15 @@ module Scmd
         while @child_process.check_for_exit
           begin
             read_output
-          rescue EOFError => err
+          rescue EOFError # rubocop:disable Lint/SuppressedException
           end
         end
-        @stop_w.write_nonblock('.')
+        @stop_w.write_nonblock(".")
       end
     end
 
     def wait(timeout = nil)
-      return if !running?
+      return unless running?
 
       wait_for_exit(timeout)
       if @child_process.running?
@@ -78,18 +85,18 @@ module Scmd
     end
 
     def stop(timeout = nil)
-      return if !running?
+      return unless running?
 
       send_term
       begin
         wait(timeout || DEFAULT_STOP_TIMEOUT)
-      rescue TimeoutError => err
+      rescue TimeoutError
         kill
       end
     end
 
     def kill(signal = nil)
-      return if !running?
+      return unless running?
 
       send_kill(signal)
       wait # indefinitely until cmd is killed
@@ -108,25 +115,28 @@ module Scmd
     end
 
     def inspect
-      reference = '0x0%x' % (self.object_id << 1)
+      reference = "0x0%x" % (object_id << 1)
       "#<#{self.class}:#{reference}"\
-      " @cmd_str=#{self.cmd_str.inspect}"\
+      " @cmd_str=#{cmd_str.inspect}"\
       " @exitstatus=#{@exitstatus.inspect}>"
     end
 
     private
 
     def read_output
-      @child_process.read(READ_SIZE){ |out, err| @stdout += out; @stderr += err }
+      @child_process.read(READ_SIZE) do |out, err|
+        @stdout += out
+        @stderr += err
+      end
     end
 
     def wait_for_exit(timeout)
-      ios, _, _ = IO.select([ @stop_r ], nil, nil, timeout)
-      @stop_r.read_nonblock(1) if ios && ios.include?(@stop_r)
+      ios, _, _ = IO.select([@stop_r], nil, nil, timeout)
+      @stop_r.read_nonblock(1) if ios&.include?(@stop_r)
     end
 
     def reset_attrs
-      @stdout, @stderr, @pid, @exitstatus = '', '', nil, nil
+      @stdout, @stderr, @pid, @exitstatus = +"", +"", nil, nil
     end
 
     def setup_run
@@ -145,15 +155,15 @@ module Scmd
     end
 
     def send_term
-      send_signal 'TERM'
+      send_signal "TERM"
     end
 
     def send_kill(signal = nil)
-      send_signal(signal || 'KILL')
+      send_signal(signal || "KILL")
     end
 
     def send_signal(sig)
-      return if !running?
+      return unless running?
       @child_process.send_signal(sig)
     end
 
@@ -164,14 +174,13 @@ module Scmd
     end
 
     class ChildProcess
-
       attr_reader :pid, :stdin, :stdout, :stderr
 
       def initialize(cmd_str, env, options)
-        @pid, @stdin, @stdout, @stderr = *::POSIX::Spawn::popen4(
+        @pid, @stdin, @stdout, @stderr = *::POSIX::Spawn.popen4(
           env,
           cmd_str,
-          options
+          options,
         )
         @wait_pid, @wait_status = nil, nil
       end
@@ -194,25 +203,34 @@ module Scmd
       end
 
       def write(input)
-        if !input.nil?
+        unless input.nil?
           [*input].each{ |line| @stdin.puts line.to_s }
           @stdin.close
         end
       end
 
       def read(size)
-        ios, _, _ = IO.select([ @stdout, @stderr ], nil, nil, READ_CHECK_TIMEOUT)
+        ios, _, _ =
+          IO.select([@stdout, @stderr], nil, nil, READ_CHECK_TIMEOUT)
         if ios && block_given?
-          yield read_if_ready(ios, @stdout, size), read_if_ready(ios, @stderr, size)
+          yield(
+            read_if_ready(ios, @stdout, size),
+            read_if_ready(ios, @stderr, size)
+          )
         end
       end
 
       def send_signal(sig)
-        process_kill(sig, self.pid)
+        process_kill(sig, pid)
       end
 
-      def flush_stdout; @stdout.read; end
-      def flush_stderr; @stderr.read; end
+      def flush_stdout
+        @stdout.read
+      end
+
+      def flush_stderr
+        @stderr.read
+      end
 
       def teardown
         [@stdin, @stdout, @stderr].each{ |fd| fd.close if fd && !fd.closed? }
@@ -221,7 +239,7 @@ module Scmd
       private
 
       def read_if_ready(ready_ios, io, size)
-        ready_ios.include?(io) ? read_by_size(io, size) : ''
+        ready_ios.include?(io) ? read_by_size(io, size) : ""
       end
 
       def read_by_size(io, size)
@@ -238,11 +256,8 @@ module Scmd
       end
 
       def pgrep
-        @pgrep ||= Command.new('which pgrep').run.stdout.strip
+        @pgrep ||= Command.new("which pgrep").run.stdout.strip
       end
-
     end
-
   end
-
 end
