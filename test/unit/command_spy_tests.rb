@@ -1,20 +1,20 @@
+# frozen_string_literal: true
+
 require "assert"
-require 'scmd/command_spy'
+require "scmd/command_spy"
 
 class Scmd::CommandSpy
-
   class UnitTests < Assert::Context
     desc "Scmd::CommandSpy"
     setup do
       @spy_class = Scmd::CommandSpy
     end
-
   end
 
   class InitTests < UnitTests
     setup do
-      @orig_scmd_test_mode = ENV['SCMD_TEST_MODE']
-      ENV['SCMD_TEST_MODE'] = '1'
+      @orig_scmd_test_mode = ENV["SCMD_TEST_MODE"]
+      ENV["SCMD_TEST_MODE"] = "1"
       Scmd.reset
 
       @cmd_str = Factory.string
@@ -22,7 +22,7 @@ class Scmd::CommandSpy
     end
     teardown do
       Scmd.reset
-      ENV['SCMD_TEST_MODE'] = @orig_scmd_test_mode
+      ENV["SCMD_TEST_MODE"] = @orig_scmd_test_mode
     end
     subject{ @spy }
 
@@ -54,17 +54,17 @@ class Scmd::CommandSpy
 
       assert_equal 1,  subject.pid
       assert_equal 0,  subject.exitstatus
-      assert_equal '', subject.stdout
-      assert_equal '', subject.stderr
+      assert_equal "", subject.stdout
+      assert_equal "", subject.stderr
     end
 
     should "allow specifying env and options" do
       opts = { Factory.string => Factory.string }
       cmd = Scmd::Command.new(Factory.string, {
-        :env     => { :SCMD_TEST_VAR => 1 },
-        :options => opts
-      })
-      exp = { 'SCMD_TEST_VAR' => '1' }
+        env: { SCMD_TEST_VAR: 1 },
+        options: opts,
+      },)
+      exp = { "SCMD_TEST_VAR" => "1" }
       assert_equal exp,  cmd.env
       assert_equal opts, cmd.options
     end
@@ -162,7 +162,7 @@ class Scmd::CommandSpy
     end
 
     should "not track global run, run! or start calls if not in test mode" do
-      ENV.delete('SCMD_TEST_MODE')
+      ENV.delete("SCMD_TEST_MODE")
 
       input = Factory.string
       # if `Scmd.calls` is called when not in test mode it will raise an error,
@@ -174,7 +174,7 @@ class Scmd::CommandSpy
         subject.start(input)
       end
 
-      ENV['SCMD_TEST_MODE'] = '1'
+      ENV["SCMD_TEST_MODE"] = "1"
     end
 
     should "track its wait calls" do
@@ -232,13 +232,11 @@ class Scmd::CommandSpy
         :pid,
         :exitstatus,
         :stdout,
-        :stderr
+        :stderr,
       ].sample
       Assert.stub(spy2, a){ Factory.string }
 
       assert_not_equal spy1, spy2
     end
-
   end
-
 end

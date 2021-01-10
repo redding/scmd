@@ -1,11 +1,12 @@
+# frozen_string_literal: true
+
 # $ bundle exec ruby script/bench.rb
 
-require 'bench/runner'
+require_relative "../bench/runner"
 
 class ScmdBenchLogger
-
   def initialize(file_path)
-    @file = File.open(file_path, 'w')
+    @file = File.open(file_path, "w")
     @ios = [@file, $stdout]
     yield self
     @file.close
@@ -17,10 +18,9 @@ class ScmdBenchLogger
     end
   end
 
-  def respond_to?(*args)
+  def respond_to_missing?(*args)
     @ios.first.respond_to?(args.first.to_s) ? true : super
   end
-
 end
 
 def run_cmd(logger, *args)
@@ -33,7 +33,7 @@ def run_cmd(logger, *args)
   GC.start
 end
 
-ScmdBenchLogger.new('bench/results.txt') do |logger|
+ScmdBenchLogger.new("bench/results.txt") do |logger|
   run_cmd(logger, Scmd.new("echo hi"), 1)
   run_cmd(logger, Scmd.new("echo hi"), 10)
   run_cmd(logger, Scmd.new("echo hi"), 100)
@@ -44,4 +44,3 @@ ScmdBenchLogger.new('bench/results.txt') do |logger|
   run_cmd(logger, Scmd.new("cat test/support/bigger-than-64k.txt"), 100)
   run_cmd(logger, Scmd.new("cat test/support/bigger-than-64k.txt"), 1000)
 end
-

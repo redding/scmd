@@ -1,8 +1,9 @@
+# frozen_string_literal: true
+
 require "assert"
-require 'scmd/command'
+require "scmd/command"
 
 class Scmd::Command
-
   class UnitTests < Assert::Context
     desc "Scmd::Command"
     setup do
@@ -27,9 +28,9 @@ class Scmd::Command
 
     should "stringify its env hash" do
       cmd = Scmd::Command.new("echo $SCMD_TEST_VAR", {
-        :env => { :SCMD_TEST_VAR => 1 }
-      })
-      exp = { 'SCMD_TEST_VAR' => '1' }
+        env: { SCMD_TEST_VAR: 1 },
+      },)
+      exp = { "SCMD_TEST_VAR" => "1" }
       assert_equal exp, cmd.env
     end
 
@@ -40,8 +41,8 @@ class Scmd::Command
     should "default its result values" do
       assert_nil subject.pid
       assert_nil subject.exitstatus
-      assert_equal '', subject.stdout
-      assert_equal '', subject.stderr
+      assert_equal "", subject.stdout
+      assert_equal "", subject.stderr
     end
 
     should "default its state" do
@@ -72,7 +73,5 @@ class Scmd::Command
       subject.kill
       assert_nil subject.pid
     end
-
   end
-
 end

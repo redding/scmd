@@ -1,10 +1,11 @@
-require 'assert'
-require 'scmd/stored_commands'
+# frozen_string_literal: true
 
-require 'scmd/command_spy'
+require "assert"
+require "scmd/stored_commands"
+
+require "scmd/command_spy"
 
 class Scmd::StoredCommands
-
   class UnitTests < Assert::Context
     desc "Scmd::StoredCommands"
     setup do
@@ -98,7 +99,6 @@ class Scmd::StoredCommands
       cmds1.add(@cmd_str)
       assert_not_equal cmds1, cmds2
     end
-
   end
 
   class StubTests < UnitTests
@@ -125,7 +125,7 @@ class Scmd::StoredCommands
 
     should "allow setting commands for specific opts" do
       cmd = subject.call(@opts)
-      assert_equal '', cmd.stdout
+      assert_equal "", cmd.stdout
 
       subject.with({}){ |cmd| cmd.stdout = @output }
       cmd = subject.call({})
@@ -140,7 +140,5 @@ class Scmd::StoredCommands
       Assert.stub(stub1, [:cmd_str, :hash].sample){ Factory.string }
       assert_not_equal stub1, stub2
     end
-
   end
-
 end
