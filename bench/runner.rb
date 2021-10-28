@@ -12,9 +12,10 @@ class ScmdBenchRunner
 
   def initialize(printer_io, cmd, num_times = 10)
     @cmd = cmd
-    @proc = proc do
-      num_times.times{ cmd.run! }
-    end
+    @proc =
+      proc do
+        num_times.times{ cmd.run! }
+      end
 
     @printer =
       Whysoslow::DefaultPrinter.new(

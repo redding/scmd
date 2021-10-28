@@ -56,15 +56,16 @@ module Scmd
 
       @pid = @child_process.pid.to_i
       @child_process.write(input)
-      @read_output_thread = Thread.new do
-        while @child_process.check_for_exit
-          begin
-            read_output
-          rescue EOFError # rubocop:disable Lint/SuppressedException
+      @read_output_thread =
+        Thread.new do
+          while @child_process.check_for_exit
+            begin
+              read_output
+            rescue EOFError # rubocop:disable Lint/SuppressedException
+            end
           end
+          @stop_w.write_nonblock(".")
         end
-        @stop_w.write_nonblock(".")
-      end
     end
 
     def wait(timeout = nil)
@@ -168,7 +169,7 @@ module Scmd
     end
 
     def stringify_hash(hash)
-      hash.inject({}) do |h, (k, v)|
+      hash.reduce({}) do |h, (k, v)|
         h.merge(k.to_s => v.to_s)
       end
     end

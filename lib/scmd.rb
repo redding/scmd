@@ -19,10 +19,11 @@ module Scmd
 
   def self.commands
     raise NoMethodError unless ENV["SCMD_TEST_MODE"]
-    @commands ||= begin
-      require "scmd/stored_commands"
-      StoredCommands.new
-    end
+    @commands ||=
+      begin
+        require "scmd/stored_commands"
+        StoredCommands.new
+      end
   end
 
   def self.calls
